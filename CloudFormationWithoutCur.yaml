@@ -37,7 +37,7 @@ Resources:
   CostAndUsageReport:
     Type: AWS::CUR::ReportDefinition
     Properties:
-      ReportName: CostAndUsageReport
+      ReportName: DigiUsherCostAndUsageReport
       TimeUnit: DAILY
       Format: textORcsv
       Compression: ZIP
@@ -61,7 +61,7 @@ Resources:
       Description: IAM Role for third-party access
       RoleName: !Ref RoleName
       Policies:
-        - PolicyName: RolePolicy
+        - PolicyName: DigiUsherRolePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:

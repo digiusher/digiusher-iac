@@ -20,7 +20,7 @@ Resources:
       Description: IAM Role for third-party access
       RoleName: !Ref RoleName
       Policies:
-        - PolicyName: RolePolicy
+        - PolicyName: DigiUsherRolePolicy
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -46,5 +46,5 @@ Resources:
 
 Outputs:
   IAMRoleArn:
-    Description: ARN of the created IAM role
+    Description: Role ARN Value
     Value: !GetAtt MyIAMRole.Arn
