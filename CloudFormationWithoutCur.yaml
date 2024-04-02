@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name of the S3 bucket for storing Cost and Usage Reports
+  ThirdPartyAccountId:
+    Type: String
+    Description: The AWS Account ID of the third party to trust
+  RoleName:
+    Type: String
+    Description: Name for the IAM Role
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName  
+      AccessControl: Private
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket 
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: billingreports.amazonaws.com
+            Action:
+              - s3:GetBucketAcl
+              - s3:GetBucketPolicy
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}"
+          - Effect: Allow
+            Principal:
+              Service: billingreports.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+  CostAndUsageReport:
+    Type: AWS::CUR::ReportDefinition
+    Properties:
+      ReportName: CostAndUsageReport
+      TimeUnit: DAILY
+      Format: textORcsv
+      Compression: ZIP
+      S3Bucket: !Ref S3Bucket
+      S3Region: !Ref AWS::Region
+      S3Prefix: CUR/
+      AdditionalSchemaElements:
+        - RESOURCES
+      RefreshClosedReports: true
+      ReportVersioning: OVERWRITE_REPORT
+  MyIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${ThirdPartyAccountId}:root"
+            Action: sts:AssumeRole
+      Description: IAM Role for third-party access
+      RoleName: !Ref RoleName
+      Policies:
+        - PolicyName: RolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DigiUsherOperations
+                Effect: Allow
+                Action:
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetBucketTagging
+                  - iam:GetAccessKeyLastUsed
+                  - cloudwatch:GetMetricStatistics
+                  - s3:GetBucketAcl
+                  - ec2:Describe*
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:ListAllMyBuckets
+                  - iam:ListUsers
+                  - s3:GetBucketLocation
+                  - iam:GetLoginProfile
+                  - cur:DescribeReportDefinitions
+                  - iam:ListAccessKeys
+                Resource: "*"
+
+Outputs:
+  IAMRoleArn:
+    Description: Role ARN Value
+    Value: !GetAtt MyIAMRole.Arn
+  ReportName:
+    Description: Report Name
+    Value: !Ref CostAndUsageReport
+  BucketNameOutput:
+    Description: Report Amazon S3 bucket name
+    Value: !Ref BucketName
+  S3PrefixOutput:
+    Description: Report Path Prefix 
+    Value: CUR/

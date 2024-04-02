@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ThirdPartyAccountId:
+    Type: String
+    Description: The AWS Account ID of the third party to trust
+  RoleName:
+    Type: String
+    Description: Name for the IAM Role
+Resources:
+  MyIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${ThirdPartyAccountId}:root"
+            Action: sts:AssumeRole
+      Description: IAM Role for third-party access
+      RoleName: !Ref RoleName
+      Policies:
+        - PolicyName: RolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DigiUsherOperations
+                Effect: Allow
+                Action:
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetBucketTagging
+                  - iam:GetAccessKeyLastUsed
+                  - cloudwatch:GetMetricStatistics
+                  - s3:GetBucketAcl
+                  - ec2:Describe*
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:ListAllMyBuckets
+                  - iam:ListUsers
+                  - s3:GetBucketLocation
+                  - iam:GetLoginProfile
+                  - cur:DescribeReportDefinitions
+                  - iam:ListAccessKeys
+                Resource: "*"
+
+Outputs:
+  IAMRoleArn:
+    Description: ARN of the created IAM role
+    Value: !GetAtt MyIAMRole.Arn
