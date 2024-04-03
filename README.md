@@ -64,3 +64,25 @@ These templates are designed to cater to different scenarios: one with CUR enabl
 6. **Fill in Output Values**:
    Use the output values provided and fill them in the fields when connecting to the AWS ARN data source.
 
+7. **Policy Attachment Requirement for AWS CLI Users**:
+   If you choose to create the stack through the AWS CLI, make sure to attach the following policy to your IAM user:
+   ```
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Action": [
+                   "cloudformation:*",
+                   "s3:CreateBucket",
+                   "s3:PutBucketPolicy",
+                   "s3:PutObject",
+                   "iam:CreateRole",
+                   "iam:PutRolePolicy",
+                   "iam:GetRole",
+                   "cur:PutReportDefinition"
+               ],
+               "Resource": "*"
+           }
+       ]
+   }
