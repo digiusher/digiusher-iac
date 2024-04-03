@@ -17,14 +17,46 @@ These templates are designed to cater to different scenarios: one with CUR enabl
    - If CUR is not enabled, use `CloudFormationWithoutCur.yaml`.
 
 3. **Create CloudFormation Stack**:
-   Use the AWS Management Console to create a CloudFormation stack:
-   - Go to the CloudFormation service in the AWS Management Console.
-   - Click on "Create stack" and choose "With new resources (standard)".
-   - Select "Upload a template file" and upload the choosen template.
-   - Follow the on-screen instructions to specify stack details, skip configuring stack options, and create the stack.
+   Use the AWS Management Console or AWS CLI to create a CloudFormation stack:
+
+   - **Using AWS Management Console**:
+     - Go to the CloudFormation service in the AWS Management Console.
+     - Click on "Create stack" and choose "With new resources (standard)".
+     - Select "Upload a template file" and upload the chosen template.
+     - Follow the on-screen instructions to specify stack details, skip configuring stack options, and create the stack.
+
+   - **Using AWS CLI**:
+     Follow these commands to create the stack:
+     - For CloudFormationWithoutCur:
+       ```
+       aws cloudformation create-stack \
+           --stack-name YourStackName \
+           --template-body file://path/to/CloudFormationWithoutCur.yaml \
+           --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
+                        ParameterKey=BucketName,ParameterValue=YourBucketName \
+                        ParameterKey=ThirdPartyAccountId,ParameterValue=DigiusherAccountId
+       ```
+
+     - For CloudFormationWithCur:
+       ```
+       aws cloudformation create-stack \
+           --stack-name YourStackName \
+           --template-body file://path/to/CloudFormationWithCur.yaml \
+           --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
+                        ParameterKey=ThirdPartyAccountId,ParameterValue=DigiusherAccountId
+       ```
+
+     Replace `YourStackName`, `YourRoleName` and  `YourBucketName` with your desired values. 
+     Replace `DigiusherAccountId` with the Account Id shared. 
 
 4. **Monitor Stack Creation**:
-   Monitor the stack creation process through the AWS Management Console.
+   Monitor the stack creation process through the AWS Management Console or AWS CLI:
+   - Using AWS Management Console:
+     Navigate to the CloudFormation service and monitor the stack status.
+   - Using AWS CLI:
+     ```
+     aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
+     ```
 
 5. **Navigate to Outputs**:
    After the stack creation is complete, navigate to the "Outputs" section in the CloudFormation stack details.
