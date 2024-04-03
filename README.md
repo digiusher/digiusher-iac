@@ -55,12 +55,19 @@ These templates are designed to cater to different scenarios: one with CUR enabl
      Navigate to the CloudFormation service and monitor the stack status.
    - Using AWS CLI:
      ```
-     aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
+     aws cloudformation describe-stacks --stack-name YOUR_STACK_NAME
      ```
+     Look for the "StackStatus" field in the output. If the stack has been created successfully, the status will be CREATE_COMPLETE. If it's still being created, the status will be CREATE_IN_PROGRESS. If there was an error during creation, the status will indicate that (CREATE_FAILED). If the stack is not yet created, you won't receive any output.
 
 5. **Navigate to Outputs**:
-   After the stack creation is complete, navigate to the "Outputs" section in the CloudFormation stack details.
-
+   After the stack creation is complete, 
+   - Using AWS Management Console:
+     Navigate to the "Outputs" section in the CloudFormation stack details.
+   - Using AWS CLI:
+     ```
+     aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
+     ```
+   
 6. **Fill in Output Values**:
    Use the output values provided and fill them in the fields when connecting to the AWS ARN data source.
 
