@@ -21,7 +21,11 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
      - Go to the CloudFormation service in the AWS Management Console.
      - Click on "Create stack" and select "With new resources (standard)".
      - Upload the chosen template and follow the on-screen instructions to specify stack details, skipping configuration of stack options, and proceed to create the stack.
-
+        - Sample output after creating stack:
+          - Without CUR 
+            ![Alt text](outputs/consoleoutputwithoutcuraftercreation.png) 
+          - With CUR
+            ![Alt text](outputs/consoleoutputwithcuraftercreationstack.png) 
    - **Using AWS CLI**:
      Execute the commands below to create the stack:
      - For `CloudFormationWithoutCur`:
@@ -34,8 +38,8 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
                       ParameterKey=BucketName,ParameterValue=YourBucketName \
           --capabilities CAPABILITY_NAMED_IAM
        ```
-      - Sample output after execution of the above command 
-        ![Alt text](outputs/withoutcuroutputaftercreation.png) 
+       - Sample output after execution of the above command 
+         ![Alt text](outputs/withoutcuroutputaftercreation.png) 
      - For `CloudFormationWithCur`:
        ```
        aws cloudformation create-stack \
@@ -59,6 +63,11 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
 5. **Navigate to Outputs**:
    After the stack creation is complete,
    - AWS Management Console: Navigate to the "Outputs" section in the CloudFormation stack details.
+     - Sample output after creating stack:
+          - Without CUR 
+            ![Alt text](outputs/consoleoutputwithoutcur.png) 
+          - With CUR
+            ![Alt text](outputs/consoleoutputwithcur.png) 
    - AWS CLI:
      ```
      aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
