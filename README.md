@@ -27,22 +27,25 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
      - For `CloudFormationWithoutCur`:
        ```
        aws cloudformation create-stack \
-           --stack-name YourStackName \
-           --template-body file://path/to/CloudFormationWithoutCur.yaml \
-           --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
-                        ParameterKey=BucketName,ParameterValue=YourBucketName \
-                        ParameterKey=DigiusherAccountId,ParameterValue=058264546051
+          --stack-name YourStackName \
+          --template-body file://path/to/CloudFormationWithoutCur.yaml \
+          --region us-east-1 \
+          --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
+                      ParameterKey=BucketName,ParameterValue=YourBucketName \
+          --capabilities CAPABILITY_NAMED_IAM
        ```
-
+      - Sample output after execution of the above command 
+        ![Alt text](outputs/withoutcuroutputaftercreation.png) 
      - For `CloudFormationWithCur`:
        ```
        aws cloudformation create-stack \
            --stack-name YourStackName \
            --template-body file://path/to/CloudFormationWithCur.yaml \
            --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
-                        ParameterKey=DigiusherAccountId,ParameterValue=058264546051
+           --capabilities CAPABILITY_NAMED_IAM
        ```
-
+       - Sample output after execution of the above command 
+        ![Alt text](outputs/withcuroutputaftercreation.png)
      Ensure to replace `YourRoleName` and `YourBucketName` with appropriate values.
 
 4. **Monitor Stack Creation**:
@@ -50,7 +53,7 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
    - AWS Management Console: Check the CloudFormation service for the stack status.
    - AWS CLI:
      ```
-     aws cloudformation describe-stacks --stack-name DigiUsherStack
+     aws cloudformation describe-stacks --stack-name YourStackName
      ```
 
 5. **Navigate to Outputs**:
@@ -58,8 +61,13 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
    - AWS Management Console: Navigate to the "Outputs" section in the CloudFormation stack details.
    - AWS CLI:
      ```
-     aws cloudformation describe-stacks --stack-name DigiUsherStack --query 'Stacks[].Outputs'
+     aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
      ```
+     - Sample output after execution of the above command:
+       - Without CUR
+        ![Alt text](outputs/withoutcuroutput.png) 
+       - With CUR
+        ![Alt text](outputs/withcuroutput.png) 
 
 6. **Fill in Output Values**:
    Utilize the provided output values and integrate them into your AWS ARN data source connections.
