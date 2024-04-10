@@ -1,23 +1,25 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Parameters:
-  ThirdPartyAccountId:
-    Type: String
-    Description: The AWS Account ID of the third party to trust
+Description: |
+    This CloudFormation template allows for the creation of an IAM role with specific permissions, with the role name being provided as a parameter. The output provides the ARN of the created IAM role.  
+
+Parameters:  
   RoleName:
     Type: String
     Description: Name for the IAM Role
+
 Resources:
-  MyIAMRole:
+  DigiusherIAMRole:
     Type: AWS::IAM::Role
+    Description: |
+      Creates an IAM role by allowing a trust relationship with Digiusher's Account ID and providing specific permissions for accessing AWS services.
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              AWS: !Sub "arn:aws:iam::${ThirdPartyAccountId}:root"
+              AWS: !Sub "arn:aws:iam::058264546051:root"
             Action: sts:AssumeRole
-      Description: IAM Role for third-party access
       RoleName: !Ref RoleName
       Policies:
         - PolicyName: DigiUsherRolePolicy
@@ -47,4 +49,5 @@ Resources:
 Outputs:
   IAMRoleArn:
     Description: Role ARN Value
-    Value: !GetAtt MyIAMRole.Arn
+    Value: !GetAtt DigiusherIAMRole.Arn
+    
