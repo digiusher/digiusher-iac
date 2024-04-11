@@ -19,7 +19,13 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
 
    - **Using AWS Management Console**:
      - Go to the CloudFormation service in the AWS Management Console.
-     - Click on "Create stack" and select "With new resources (standard)".
+     - Before proceeding, change the AWS Management Console's region to N. Virginia (us-east-1):
+        -  At the top right corner of the AWS Management Console, you'll see the name of the current region. Click on it.
+        -  A dropdown menu will appear with a list of available regions. Select "US East(N. Virginia)" (us-east-1) from the list.
+     - Click on "Create stack".
+        - ![Alt text](outputs/consoleinst1.png) 
+     - Choose "Template is ready" and "Upload a template file".
+        - ![Alt text](outputs/consoleinst2.png) 
      - Upload the chosen template and follow the on-screen instructions to specify stack details, skipping configuration of stack options, and proceed to create the stack.
         - Sample output after creating stack:
           - Without CUR 
