@@ -23,15 +23,15 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
         -  At the top right corner of the AWS Management Console, you'll see the name of the current region. Click on it.
         -  A dropdown menu will appear with a list of available regions. Select "US East(N. Virginia)" (us-east-1) from the list.
      - Click on "Create stack".
-        - ![Alt text](outputs/consoleinst1.png) 
+        - ![Alt text](assets/consoleinst1.png)
      - Choose "Template is ready" and "Upload a template file".
-        - ![Alt text](outputs/consoleinst2.png) 
+        - ![Alt text](assets/consoleinst2.png)
      - Upload the chosen template and follow the on-screen instructions to specify stack details, skipping configuration of stack options, and proceed to create the stack.
         - Sample output after creating stack:
-          - Without CUR 
-            ![Alt text](outputs/consoleoutputwithoutcuraftercreation.png) 
+          - Without CUR
+            ![Alt text](assets/consoleoutputwithoutcuraftercreation.png)
           - With CUR
-            ![Alt text](outputs/consoleoutputwithcuraftercreationstack.png) 
+            ![Alt text](assets/consoleoutputwithcuraftercreationstack.png)
    - **Using AWS CLI**:
      Execute the commands below to create the stack:
      - For `CloudFormationWithoutCur`:
@@ -44,8 +44,8 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
                       ParameterKey=BucketName,ParameterValue=YourBucketName \
           --capabilities CAPABILITY_NAMED_IAM
        ```
-       - Sample output after execution of the above command 
-         ![Alt text](outputs/withoutcuroutputaftercreation.png) 
+       - Sample output after execution of the above command
+         ![Alt text](assets/withoutcuroutputaftercreation.png)
      - For `CloudFormationWithCur`:
        ```
        aws cloudformation create-stack \
@@ -54,8 +54,8 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
            --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
            --capabilities CAPABILITY_NAMED_IAM
        ```
-       - Sample output after execution of the above command 
-        ![Alt text](outputs/withcuroutputaftercreation.png)
+       - Sample output after execution of the above command
+        ![Alt text](assets/withcuroutputaftercreation.png)
      Ensure to replace `YourRoleName` and `YourBucketName` with appropriate values.
 
 4. **Monitor Stack Creation**:
@@ -70,19 +70,19 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
    After the stack creation is complete,
    - AWS Management Console: Navigate to the "Outputs" section in the CloudFormation stack details.
      - Sample output after creating stack:
-          - Without CUR 
-            ![Alt text](outputs/consoleoutputwithoutcur.png) 
+          - Without CUR
+            ![Alt text](assets/consoleoutputwithoutcur.png)
           - With CUR
-            ![Alt text](outputs/consoleoutputwithcur.png) 
+            ![Alt text](assets/consoleoutputwithcur.png)
    - AWS CLI:
      ```
      aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
      ```
      - Sample output after execution of the above command:
        - Without CUR
-        ![Alt text](outputs/withoutcuroutput.png) 
+        ![Alt text](assets/withoutcuroutput.png)
        - With CUR
-        ![Alt text](outputs/withcuroutput.png) 
+        ![Alt text](assets/withcuroutput.png)
 
 6. **Fill in Output Values**:
    Utilize the provided output values and integrate them into your AWS ARN data source connections.
