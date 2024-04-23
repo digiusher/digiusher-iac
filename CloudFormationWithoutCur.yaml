@@ -46,7 +46,7 @@ Resources:
     Description: |
       Defines a Cost and Usage Report (CUR) to capture detailed usage and cost data.
     Properties:
-      ReportName: DigiUsherCostAndUsageReportTest
+      ReportName: !Sub "DigiUsherCostAndUsageReport_${BucketName}"
       TimeUnit: DAILY
       Format: textORcsv
       Compression: ZIP
