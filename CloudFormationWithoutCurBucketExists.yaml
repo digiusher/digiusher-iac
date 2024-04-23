@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: |
+  This CloudFormation template sets up resources necessary for generating and storing Cost and Usage Reports (CUR) in an AWS environment. It provisions an S3 bucket to store the reports, configures the necessary permissions for billing services to access the bucket, defines a Cost and Usage Report, creates an IAM Role, and specifies relevant permissions for the role.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Name of the S3 bucket for storing Cost and Usage Reports.
+  RoleName:
+    Type: String
+    Description: Name for the IAM Role
+
+Resources:
+  DigiusherCostAndUsageReport:
+    Type: AWS::CUR::ReportDefinition
+    Description: |
+      Defines a Cost and Usage Report (CUR) to capture detailed usage and cost data.
+    Properties:
+      ReportName: !Sub "DigiUsherCostAndUsageReport_${BucketName}"
+      TimeUnit: DAILY
+      Format: textORcsv
+      Compression: ZIP
+      S3Bucket: !Ref BucketName
+      S3Region: !Ref AWS::Region
+      S3Prefix: CUR/
+      AdditionalSchemaElements:
+        - RESOURCES
+      RefreshClosedReports: true
+      ReportVersioning: OVERWRITE_REPORT
+
+  DigiusherIAMRole:
+    Type: AWS::IAM::Role
+    Description: |
+      Creates an IAM role by allowing a trust relationship with Digiusher's Account ID and providing specific permissions for accessing AWS services.
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::058264546051:root"
+            Action: sts:AssumeRole
+      RoleName: !Ref RoleName
+      Policies:
+        - PolicyName: DigiUsherRolePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DigiUsherOperations
+                Effect: Allow
+                Action:
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetBucketTagging
+                  - iam:GetAccessKeyLastUsed
+                  - cloudwatch:GetMetricStatistics
+                  - s3:GetBucketAcl
+                  - ec2:Describe*
+                  - s3:ListBucket
+                  - s3:GetObject
+                  - s3:ListAllMyBuckets
+                  - iam:ListUsers
+                  - s3:GetBucketLocation
+                  - iam:GetLoginProfile
+                  - cur:DescribeReportDefinitions
+                  - iam:ListAccessKeys
+                Resource: "*"
+
+Outputs:
+  IAMRoleArn:
+    Description: Role ARN Value
+    Value: !GetAtt DigiusherIAMRole.Arn
+  ReportName:
+    Description: Report Name
+    Value: !Ref DigiusherCostAndUsageReport
+    
