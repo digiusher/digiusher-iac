@@ -16,10 +16,6 @@ variable "role_name" {
   description = "Name for the IAM Role"
 }
 
-variable "cur_bucket_name" {
-  description = "Name of the S3 bucket containing the CUR"
-}
-
 resource "aws_iam_role" "digusher_iam_role" {
   name = var.role_name
 
@@ -62,18 +58,6 @@ resource "aws_iam_role" "digusher_iam_role" {
           ]
           Resource = "*"
         }
-        {
-          Sid    = "DigiUsherCURPermissions"
-          Effect = "Allow"
-          Action = [
-            "s3:GetObject",
-            "s3:ListBucket"
-          ]
-          Resource = [
-            "arn:aws:s3:::${var.cur_bucket_name}",
-            "arn:aws:s3:::${var.cur_bucket_name}/*"
-           ]
-         }
       ]
     })
   }
