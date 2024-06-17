@@ -86,8 +86,6 @@ Resources:
                   - cloudwatch:GetMetricStatistics
                   - s3:GetBucketAcl
                   - ec2:Describe*
-                  - s3:ListBucket
-                  - s3:GetObject
                   - s3:ListAllMyBuckets
                   - iam:ListUsers
                   - s3:GetBucketLocation
@@ -95,6 +93,14 @@ Resources:
                   - cur:DescribeReportDefinitions
                   - iam:ListAccessKeys
                 Resource: "*"
+              - Sid: DigiUsherCURPermissions
+                Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetObject
+                Resource:
+                  - !Sub "arn:aws:s3:::${BucketName}"
+                  - !Sub "arn:aws:s3:::${BucketName}/*"
 
 Outputs:
   IAMRoleArn:

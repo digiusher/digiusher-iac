@@ -99,8 +99,6 @@ resource "aws_iam_role" "digusher_iam_role" {
             "cloudwatch:GetMetricStatistics",
             "s3:GetBucketAcl",
             "ec2:Describe*",
-            "s3:ListBucket",
-            "s3:GetObject",
             "s3:ListAllMyBuckets",
             "iam:ListUsers",
             "s3:GetBucketLocation",
@@ -109,7 +107,19 @@ resource "aws_iam_role" "digusher_iam_role" {
             "iam:ListAccessKeys"
           ]
           Resource = "*"
-        }
+        },
+        {
+          Sid    = "DigiUsherCURPermissions"
+          Effect = "Allow"
+          Action = [
+            "s3:GetObject",
+            "s3:ListBucket"
+          ]
+          Resource = [
+            "arn:aws:s3:::${var.cur_bucket_name}",
+            "arn:aws:s3:::${var.cur_bucket_name}/*"
+           ]
+         }
       ]
     })
   }

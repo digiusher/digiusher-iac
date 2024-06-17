@@ -61,7 +61,7 @@ resource "aws_iam_role" "digusher_iam_role" {
             "iam:ListAccessKeys"
           ]
           Resource = "*"
-        }
+        },
         {
           Sid    = "DigiUsherCURPermissions"
           Effect = "Allow"
