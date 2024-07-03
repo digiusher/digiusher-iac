@@ -2,19 +2,16 @@
 
 This README provides step-by-step instructions on how to create a CloudFormation stack using our provided templates tailored to your needs.
 
-This repository hosts two CloudFormation templates: `CloudFormationWithCur` and `CloudFormationWithoutCur`. These templates are designed to automatically provision AWS resources based on specific requirements, ensuring seamless deployment for DigiUsher's projects.
+These templates are designed to automatically provision AWS resources based on specific requirements, ensuring seamless deployment for DigiUsher's projects.
+
+First choose the Cloudformation template you will be using. Look at the parent [README](./README.md) for more information.
 
 ## Instructions
 
 1. **Download the Templates**:
-   Clone this repository or download the CloudFormation templates `CloudFormationWithCur.yaml` and `CloudFormationWithoutCur.yaml` to get started.
+   Clone this repository or download the CloudFormation template to get started.
 
-2. **Choose Template**:
-   Depending on whether you have Cost and Usage Reports (CUR) enabled in your AWS account, select the appropriate CloudFormation template:
-   - If CUR is enabled, use `CloudFormationWithCur.yaml`.
-   - If CUR is not enabled, use `CloudFormationWithoutCur.yaml`.
-
-3. **Create CloudFormation Stack**:
+2. **Create CloudFormation Stack**:
    Choose one of the following methods to create your stack:
 
    - **Using AWS Management Console**:
@@ -34,55 +31,48 @@ This repository hosts two CloudFormation templates: `CloudFormationWithCur` and 
             ![Alt text](assets/consoleoutputwithcuraftercreationstack.png)
    - **Using AWS CLI**:
      Execute the commands below to create the stack:
-     - For `CloudFormationWithoutCur`:
-       ```
+     - For non linked accounts (replace bucket name):
+       ```bash
        aws cloudformation create-stack \
-          --stack-name YourStackName \
-          --template-body file://path/to/CloudFormationWithoutCur.yaml \
+          --stack-name DigiUsher \
+          --template-body file://./path/to/CUR.yaml \
           --region us-east-1 \
-          --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
-                      ParameterKey=BucketName,ParameterValue=YourBucketName \
+          --parameters ParameterKey=RoleName,ParameterValue=DigiUsherIAMRole \
+                      ParameterKey=BucketName,ParameterValue=YOUR_BUCKET_NAME \
           --capabilities CAPABILITY_NAMED_IAM
        ```
        - Sample output after execution of the above command
          ![Alt text](assets/withoutcuroutputaftercreation.png)
-     - For `CloudFormationWithCur`:
+     - For linked accounts:
        ```
        aws cloudformation create-stack \
-           --stack-name YourStackName \
-           --template-body file://path/to/CloudFormationWithCur.yaml \
-           --parameters ParameterKey=RoleName,ParameterValue=YourRoleName \
+           --stack-name DigiUsher \
+           --template-body file://./linked_accounts/CloudFormationLinkedAccount.yaml \
+           --parameters ParameterKey=RoleName,ParameterValue=DigiUsherIAMRole \
            --capabilities CAPABILITY_NAMED_IAM
        ```
        - Sample output after execution of the above command
         ![Alt text](assets/withcuroutputaftercreation.png)
-     Ensure to replace `YourRoleName` and `YourBucketName` with appropriate values.
 
 4. **Monitor Stack Creation**:
    Monitor the stack creation progress using either the AWS Management Console or AWS CLI:
    - AWS Management Console: Check the CloudFormation service for the stack status.
    - AWS CLI:
      ```
-     aws cloudformation describe-stacks --stack-name YourStackName
+     aws cloudformation describe-stacks --stack-name DigiUsher
      ```
 
 5. **Navigate to Outputs**:
    After the stack creation is complete,
    - AWS Management Console: Navigate to the "Outputs" section in the CloudFormation stack details.
      - Sample output after creating stack:
-          - Without CUR
-            ![Alt text](assets/consoleoutputwithoutcur.png)
-          - With CUR
-            ![Alt text](assets/consoleoutputwithcur.png)
+        - ![Alt text](assets/consoleoutputwithcur.png)
    - AWS CLI:
      ```
      aws cloudformation describe-stacks --stack-name YourStackName --query 'Stacks[].Outputs'
      ```
      - Sample output after execution of the above command:
-       - Without CUR
-        ![Alt text](assets/withoutcuroutput.png)
-       - With CUR
-        ![Alt text](assets/withcuroutput.png)
+        - ![Alt text](assets/withcuroutput.png)
 
 6. **Fill in Output Values**:
    Utilize the provided output values and integrate them into your AWS ARN data source connections.
