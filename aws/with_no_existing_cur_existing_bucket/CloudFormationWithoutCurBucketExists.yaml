@@ -97,3 +97,9 @@ Outputs:
   ReportName:
     Description: Report Name
     Value: !Sub "DigiUsher_CUR2_Export"
+  BucketName:
+    Description: Report Amazon S3 bucket name
+    Value: !Ref BucketName
+  S3Prefix:
+    Description: Report Path Prefix 
+    Value: reports/
