@@ -6,6 +6,20 @@ Parameters:
   RoleName:
     Type: String
     Description: Name for the IAM Role
+  IncludeEC2StartStopPermissions:
+    Type: String
+    Description: Include EC2 start/stop permissions (yes/no)
+    AllowedValues: ['yes', 'no']
+    Default: "no"
+  IncludeS3DuplicateObjectsPermission:
+    Type: String
+    Description: Include S3 ListBucket permission (yes/no)
+    AllowedValues: ['yes', 'no']
+    Default: "no"
+
+Conditions:
+  IncludeEC2StartStopPermissionsCondition: !Equals [!Ref IncludeEC2StartStopPermissions, "yes"]
+  IncludeS3DuplicateObjectsPermissionCondition: !Equals [!Ref IncludeS3DuplicateObjectsPermission, "yes"]
 
 Resources:
   DigiusherIAMRole:
@@ -29,20 +43,46 @@ Resources:
               - Sid: DigiUsherRecommendationsPermissions
                 Effect: Allow
                 Action:
-                  - s3:GetBucketPublicAccessBlock
-                  - s3:GetBucketPolicyStatus
-                  - s3:GetBucketTagging
-                  - iam:GetAccessKeyLastUsed
                   - cloudwatch:GetMetricStatistics
-                  - s3:GetBucketAcl
-                  - ec2:Describe*
-                  - s3:ListAllMyBuckets
-                  - iam:ListUsers
-                  - s3:GetBucketLocation
-                  - iam:GetLoginProfile
                   - cur:DescribeReportDefinitions
+                  - ec2:Describe*
+                  - iam:GetAccessKeyLastUsed
+                  - iam:GetLoginProfile
                   - iam:ListAccessKeys
+                  - iam:ListUsers
+                  - rds:DescribeDBInstances
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketTagging
+                  - s3:ListAllMyBuckets
                 Resource: "*"
+        - !If
+          - IncludeEC2StartStopPermissionsCondition
+          - PolicyName: DigiUsherEC2StartStopPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: EC2StartStopPermissions
+                  Effect: Allow
+                  Action:
+                    - ec2:StartInstances
+                    - ec2:StopInstances
+                  Resource: "*"
+          - !Ref "AWS::NoValue"
+        - !If
+          - IncludeS3DuplicateObjectsPermissionCondition
+          - PolicyName: DigiUsherS3DuplicateObjectsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: S3DuplicateObjectsPermission
+                  Effect: Allow
+                  Action:
+                    - s3:ListBucket
+                  Resource: "*"
+          - !Ref "AWS::NoValue"
 
 Outputs:
   IAMRoleArn:
