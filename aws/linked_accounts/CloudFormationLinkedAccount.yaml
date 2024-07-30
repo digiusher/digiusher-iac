@@ -9,17 +9,13 @@ Parameters:
   IncludeEC2StartStopPermissions:
     Type: String
     Description: Include EC2 start/stop permissions (yes/no)
-    AllowedValues:
-      - yes
-      - no
-    Default: no
+    AllowedValues: ['yes', 'no']
+    Default: "no"
   IncludeS3DuplicateObjectsPermission:
     Type: String
     Description: Include S3 ListBucket permission (yes/no)
-    AllowedValues:
-      - yes
-      - no
-    Default: no
+    AllowedValues: ['yes', 'no']
+    Default: "no"
 
 Conditions:
   IncludeEC2StartStopPermissionsCondition: !Equals [!Ref IncludeEC2StartStopPermissions, "yes"]
@@ -62,24 +58,31 @@ Resources:
                   - s3:GetBucketTagging
                   - s3:ListAllMyBuckets
                 Resource: "*"
-              - Sid: EC2StartStopPermissions
-                Effect: Allow
-                Action: !If
-                  - IncludeEC2StartStopPermissionsCondition
-                  -
+        - !If
+          - IncludeEC2StartStopPermissionsCondition
+          - PolicyName: DigiUsherEC2StartStopPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: EC2StartStopPermissions
+                  Effect: Allow
+                  Action:
                     - ec2:StartInstances
                     - ec2:StopInstances
-                  - !Ref "AWS::NoValue"
-                Resource: "*"
-              - Sid: S3DuplicateObjectsPermission
-                Effect: Allow
-                Action:
-                  - !If
-                    - IncludeS3DuplicateObjectsPermissionCondition
-                    -
-                      - s3:ListBucket
-                    - !Ref "AWS::NoValue"
-                Resource: "*"
+                  Resource: "*"
+          - !Ref "AWS::NoValue"
+        - !If
+          - IncludeS3DuplicateObjectsPermissionCondition
+          - PolicyName: DigiUsherS3DuplicateObjectsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: S3DuplicateObjectsPermission
+                  Effect: Allow
+                  Action:
+                    - s3:ListBucket
+                  Resource: "*"
+          - !Ref "AWS::NoValue"
 
 Outputs:
   IAMRoleArn:
