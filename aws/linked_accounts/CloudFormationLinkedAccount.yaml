@@ -79,8 +79,7 @@ Resources:
                     -
                       - s3:ListBucket
                     - !Ref "AWS::NoValue"
-                Resource:
-                  - !Sub "arn:aws:s3:::${BucketName}"
+                Resource: "*"
 
 Outputs:
   IAMRoleArn:
