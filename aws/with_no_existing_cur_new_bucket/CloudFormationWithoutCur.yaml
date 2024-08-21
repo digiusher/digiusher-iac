@@ -17,6 +17,9 @@ Parameters:
     Type: String
     Description: Name for the IAM Role
 
+Conditions:
+  RequireUSEastRegion: !Equals [!Ref 'AWS::Region', 'us-east-1']
+
 Resources:
   DigusherS3Bucket:
     Type: AWS::S3::Bucket
@@ -37,16 +40,22 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Service: billingreports.amazonaws.com
+              Service:
+                - billingreports.amazonaws.com
+                - bcm-data-exports.amazonaws.com
             Action:
               - s3:GetBucketAcl
               - s3:GetBucketPolicy
-            Resource: !Sub "arn:aws:s3:::${DigusherS3Bucket}"
-          - Effect: Allow
-            Principal:
-              Service: billingreports.amazonaws.com
-            Action: s3:PutObject
-            Resource: !Sub "arn:aws:s3:::${DigusherS3Bucket}/*"
+              - s3:PutObject
+            Resource:
+              - !Sub "arn:aws:s3:::${DigusherS3Bucket}"
+              - !Sub "arn:aws:s3:::${DigusherS3Bucket}/*"
+            Condition:
+              StringLike:
+                aws:SourceArn:
+                  - !Sub arn:aws:cur:us-east-1:${AWS::AccountId}:definition/*
+                  - !Sub arn:aws:bcm-data-exports:us-east-1:${AWS::AccountId}:export/*
+                aws:SourceAccount: !Sub ${AWS::AccountId}
 
   DigiUsherCUR2:
     Type: AWS::BCMDataExports::Export

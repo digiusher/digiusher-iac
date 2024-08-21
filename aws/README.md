@@ -7,8 +7,9 @@ This directory contains tempaltes for multiple scenarios:
 - [Create new CUR in an existing bucket](./with_no_existing_cur_new_bucket) - When you want to create a new CUR in an existing bucket
 - [With Existing CUR](./with_existing_cur) - When you have an existing CUR that you want to reuse for DigiUsher
 
+Note: CUR reports can only be created in the us-east-1 region, make sure that the region in CLI/web is set to US East 1 before running either Terraform or Cloudformation.
 
 This instructions README is split up into two parts:
 
  - [Cloudformation](./README.cf.md)
- - [Terraform](./README.tf.md)
+ - Terraform: TODO
