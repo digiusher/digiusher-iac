@@ -38,7 +38,7 @@ Resources:
         DestinationConfigurations:
           S3Destination:
             S3Bucket: !Ref BucketName
-            S3Prefix: reports/
+            S3Prefix: reports
             S3Region: !Ref AWS::Region
             S3OutputConfigurations:
               Overwrite: "OVERWRITE_REPORT"
@@ -103,4 +103,4 @@ Outputs:
     Value: !Ref BucketName
   S3Prefix:
     Description: Report Path Prefix 
-    Value: reports/
+    Value: reports
