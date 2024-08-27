@@ -21,7 +21,7 @@ Conditions:
   RequireUSEastRegion: !Equals [!Ref 'AWS::Region', 'us-east-1']
 
 Resources:
-  DigusherS3Bucket:
+  DigiusherS3Bucket:
     Type: AWS::S3::Bucket
     Description: |
       Creates an S3 bucket to store the Cost and Usage Reports (CUR).
@@ -31,10 +31,11 @@ Resources:
 
   DigiusherS3BucketPolicy:
     Type: AWS::S3::BucketPolicy
+    DependsOn: DigiusherS3Bucket
     Description: |
       Defines a bucket policy for the S3 bucket created earlier.
     Properties:
-      Bucket: !Ref DigusherS3Bucket 
+      Bucket: !Ref DigiusherS3Bucket
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -48,8 +49,8 @@ Resources:
               - s3:GetBucketPolicy
               - s3:PutObject
             Resource:
-              - !Sub "arn:aws:s3:::${DigusherS3Bucket}"
-              - !Sub "arn:aws:s3:::${DigusherS3Bucket}/*"
+              - !Sub 'arn:${AWS::Partition}:s3:::${DigiusherS3Bucket}'
+              - !Sub 'arn:${AWS::Partition}:s3:::${DigiusherS3Bucket}/*'
             Condition:
               StringLike:
                 aws:SourceArn:
@@ -59,6 +60,7 @@ Resources:
 
   DigiUsherCUR2:
     Type: AWS::BCMDataExports::Export
+    DependsOn: DigiusherS3BucketPolicy
     Description: |
       Defines a Cost and Usage Report 2.0 (CUR) to capture detailed usage and cost data.
     Properties:
@@ -77,7 +79,7 @@ Resources:
           Frequency: "SYNCHRONOUS"
         DestinationConfigurations:
           S3Destination:
-            S3Bucket: !Ref DigusherS3Bucket
+            S3Bucket: !Ref DigiusherS3Bucket
             S3Prefix: reports
             S3Region: !Ref AWS::Region
             S3OutputConfigurations:
@@ -138,11 +140,11 @@ Outputs:
     Description: Role ARN Value
     Value: !GetAtt DigiusherIAMRole.Arn
   ReportName:
-    Description: Report Name
+    Description: Data Export Name
     Value: !Sub "DigiUsher_CUR2_Export"
   BucketName:
-    Description: Report Amazon S3 bucket name
+    Description: Data Export Amazon S3 bucket name
     Value: !Ref BucketName
   S3Prefix:
-    Description: Report Path Prefix 
+    Description: Data Export Path Prefix
     Value: reports
