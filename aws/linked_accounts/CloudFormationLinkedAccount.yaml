@@ -47,7 +47,7 @@ Resources:
                   - cur:DescribeReportDefinitions
                   - ec2:Describe*
                   - iam:GetAccessKeyLastUsed
-                  - iam:GetLoginProfckoile
+                  - iam:GetLoginProfile
                   - iam:ListAccessKeys
                   - iam:ListUsers
                   - rds:DescribeDBInstances
