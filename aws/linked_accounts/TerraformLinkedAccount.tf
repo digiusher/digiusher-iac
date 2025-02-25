@@ -54,7 +54,8 @@ resource "aws_iam_role" "digusher_iam_role" {
             "s3:GetBucketLocation",
             "iam:GetLoginProfile",
             "cur:DescribeReportDefinitions",
-            "iam:ListAccessKeys"
+            "iam:ListAccessKeys",
+            "tag:GetResources",
           ]
           Resource = "*"
         }
