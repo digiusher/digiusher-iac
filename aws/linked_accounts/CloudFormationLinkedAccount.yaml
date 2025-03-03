@@ -44,6 +44,10 @@ Resources:
                 Effect: Allow
                 Action:
                   - cloudwatch:GetMetricStatistics
+                  - ce:Get*
+                  - ce:List*
+                  - compute-optimizer:Get*
+                  - compute-optimizer:UpdateEnrollmentStatus
                   - cur:DescribeReportDefinitions
                   - ec2:Describe*
                   - iam:GetAccessKeyLastUsed
