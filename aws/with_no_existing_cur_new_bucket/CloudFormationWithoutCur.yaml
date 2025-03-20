@@ -111,21 +111,59 @@ Resources:
               - Sid: DigiUsherOperations
                 Effect: Allow
                 Action:
-                  - cloudwatch:GetMetricStatistics
-                  - cur:DescribeReportDefinitions
+                  - application-autoscaling:Describe*
+                  - autoscaling:Describe*
+                  - aws-marketplace:ListEntities
+                  - budgets:ViewBudget
+                  - ce:Describe*
+                  - ce:Get*
+                  - cloudfront:GetDistributionConfig
+                  - cloudfront:ListDistributions
+                  - cloudwatch:Get*
+                  - cloudwatch:Link
+                  - cloudwatch:List*
+                  - compute-optimizer:Get*
+                  - cur:Describe*
+                  - cur:Get*
+                  - dynamodb:Describe*
+                  - dynamodb:List*
                   - ec2:Describe*
+                  - ecs:Describe*
+                  - ecs:List*
+                  - elasticache:Describe*
                   - iam:GetAccessKeyLastUsed
                   - iam:GetLoginProfile
                   - iam:ListAccessKeys
                   - iam:ListUsers
+                  - organization:ListAccounts
+                  - organizations:DescribeOrganization
                   - rds:DescribeDBInstances
+                  - rds:PurchaseReservedDbInstancesOffering
+                  - resourcegroups:GetGroup
+                  - resourcegroups:ListGroups
                   - s3:GetBucketAcl
                   - s3:GetBucketLocation
                   - s3:GetBucketPolicyStatus
                   - s3:GetBucketPublicAccessBlock
                   - s3:GetBucketTagging
                   - s3:ListAllMyBuckets
+                  - savingsplans:CreateSavingsPlan
+                  - savingsplans:DescribeSavingsPlans
+                  - savingsplans:DescribeSavingsPlansOfferings
+                  - servicequotas:Get*
+                  - servicequotas:List*
+                  - ssm:CreateChangeRequest
+                  - ssm:DeleteChangeRequest
+                  - ssm:ListChangeRequests
+                  - ssm:UpdateChangeRequest
+                  - sustainability:GetCarbonFootprintSummary
                   - tag:GetResources
+                  - tag:GetTagKeys
+                  - tag:GetTagValues
+                  - tag:TagResources
+                  - tag:UntagResources
+                  - xray:BatchGetTraces
+                  - xray:GetTraceSummaries
                 Resource: "*"
               - Sid: DigiUsherCURPermissions
                 Effect: Allow
