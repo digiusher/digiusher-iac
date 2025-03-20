@@ -52,6 +52,7 @@ Resources:
                   - cloudwatch:Link
                   - cloudwatch:List*
                   - compute-optimizer:Get*
+                  - compute-optimizer:UpdateEnrollmentStatus
                   - cur:Describe*
                   - cur:Get*
                   - dynamodb:Describe*
@@ -91,6 +92,10 @@ Resources:
                   - tag:GetTagValues
                   - tag:TagResources
                   - tag:UntagResources
+                  - trustedadvisor:Get*
+                  - trustedadvisor:List*
+                  - trustedadvisor:Describe*
+                  - trustedadvisor:GenerateReport
                   - xray:BatchGetTraces
                   - xray:GetTraceSummaries
                 Resource: "*"
