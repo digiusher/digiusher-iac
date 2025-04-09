@@ -40,13 +40,13 @@ terraform init
 3. **Review the Planned Changes**:
 
 ```bash
-terraform plan -var-file="terraform.tfvars"
+terraform plan
 ```
 
-4. **Apply the Configuration**:
+4. **Apply the Changes**:
 
 ```bash
-terraform apply -var-file="terraform.tfvars"
+terraform apply
 ```
 
 5. **Retrieve Application Credentials**:
@@ -62,15 +62,6 @@ terraform output tenant_id
 
 # Get Client Secret (sensitive)
 terraform output -json client_secret
-
-## Security Considerations
-
-- The application is granted Reader access across all discovered subscriptions
-- The application is granted Reservation Reader access at the tenant root scope for managing Azure Reservations
-- Store the output.json file securely
-- Consider using Azure Key Vault for secret management
-- Implement regular credential rotation
-- Monitor service principal activity through Azure Activity Logs
 
 ## Error Scenarios
 
