@@ -17,9 +17,16 @@ Before you begin, ensure you have:
 
 - Azure CLI installed and authenticated
 - Terraform installed on your local machine (version 1.0.0 or higher)
-- Permissions to create applications in Azure AD
-- At least Reader access to your Azure subscriptions
-- Note: If using `az cli` you might need to temporarily elevate access for assigning the Reservation Reader permission. The process is [documented here](https://learn.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin)
+- Global Administrator or Application Administrator role in Azure AD
+- Owner or User Access Administrator role in the target subscriptions
+- Global Administrator access for Reservations Reader role assignment
+  - Note: You need to temporarily elevate access for assigning the Reservation Reader permission. The process is [documented here](https://learn.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin)
+
+## Permissions Overview
+
+The service principal will be granted:
+1. Reader role on all target subscriptions
+2. Reservations Reader role at the tenant level
 
 ## Instructions
 
