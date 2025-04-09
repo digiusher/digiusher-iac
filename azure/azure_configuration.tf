@@ -26,6 +26,13 @@ variable "tenant_id" {
   description = "The Tenant ID which should be used"
 }
 
+# Variable for explicit subscription IDs
+variable "target_subscription_ids" {
+  type        = list(string)
+  description = "List of specific subscription IDs to target. If empty, all subscriptions will be used."
+  default     = []
+}
+
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
@@ -35,14 +42,16 @@ provider "azurerm" {
 # Data source for Azure AD client config
 data "azuread_client_config" "current" {}
 
-# Get all subscriptions in the tenant
-data "azurerm_subscriptions" "available" {
-  display_name_contains = "" # Empty string means all subscriptions
-}
+# Get all available subscriptions in the tenant
+data "azurerm_subscriptions" "available" {}
 
 locals {
-  # Extract subscription IDs from the data source
-  subscriptions = [for s in data.azurerm_subscriptions.available.subscriptions : s.subscription_id]
+  # Use explicit subscription IDs if provided, otherwise use all subscriptions
+  all_subscriptions = [
+    for s in data.azurerm_subscriptions.available.subscriptions : s.subscription_id
+  ]
+
+  subscriptions = length(var.target_subscription_ids) > 0 ? var.target_subscription_ids : local.all_subscriptions
 }
 
 # Create a single application for the tenant

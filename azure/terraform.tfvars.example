@@ -1,2 +1,8 @@
 subscription_id = "your-subscription-id"
 tenant_id       = "your-tenant-id"
+
+# Or leave as [] to use all subscription ids
+target_subscription_ids = [
+    "your-subscription-id-1",
+    "your-subscription-id-2"
+]
