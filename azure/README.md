@@ -9,6 +9,7 @@ Our solution creates a single Azure AD application with a service principal that
 - Automatically discovers all accessible subscriptions
 - Provides consistent access levels across subscriptions
 - Reduces maintenance overhead
+- Optional VM power management capabilities (start/stop)
 
 ## Prerequisites
 
@@ -29,6 +30,15 @@ Create a `terraform.tfvars` file with your Azure details:
 ```hcl
 subscription_id = "your-primary-subscription-id"
 tenant_id       = "your-tenant-id"
+
+# Optional: Enable VM power management permissions
+enable_power_scheduler = true
+
+# Optional: Specify target subscriptions (if [], all subscriptions will be used)
+target_subscription_ids = [
+  "subscription-id-1",
+  "subscription-id-2"
+]
 ```
 
 2. **Initialize Terraform**:

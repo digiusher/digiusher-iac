@@ -6,3 +6,5 @@ target_subscription_ids = [
     "your-subscription-id-1",
     "your-subscription-id-2"
 ]
+
+enable_power_scheduler = true

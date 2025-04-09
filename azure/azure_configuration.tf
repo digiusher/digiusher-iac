@@ -73,12 +73,45 @@ resource "azuread_application_password" "app_password" {
   application_object_id = azuread_application.digiusher_app.object_id
 }
 
+variable "enable_power_scheduler" {
+  type        = bool
+  description = "If true, adds permissions to start and deallocate (stop) VMs"
+  default     = false
+}
+
+resource "azurerm_role_definition" "digiusher_power_scheduler" {
+  count       = var.enable_power_scheduler ? 1 : 0
+  name        = "DigiUsher Power Scheduler"
+  scope       = "/subscriptions/${var.subscription_id}"
+  description = "Custom role for managing VM start/deallocate actions"
+
+  permissions {
+    actions = [
+      "Microsoft.Compute/virtualMachines/start/action",
+      "Microsoft.Compute/virtualMachines/deallocate/action",
+    ]
+    not_actions = []
+  }
+
+  assignable_scopes = [
+    "/subscriptions/${var.subscription_id}"
+  ]
+}
+
 # Assign Reader role to the service principal in each subscription
 resource "azurerm_role_assignment" "app_role_assignment" {
   count                = length(local.subscriptions)
   scope                = "/subscriptions/${local.subscriptions[count.index]}"
   role_definition_name = "Reader"
   principal_id         = azuread_service_principal.digiusher_app_sp.object_id
+}
+
+# Assign power scheduler role if enabled
+resource "azurerm_role_assignment" "digiusher_power_scheduler_role_assignment" {
+  count               = var.enable_power_scheduler ? length(local.subscriptions) : 0
+  scope               = "/subscriptions/${local.subscriptions[count.index]}"
+  role_definition_id  = azurerm_role_definition.digiusher_power_scheduler[0].role_definition_resource_id
+  principal_id        = azuread_service_principal.digiusher_app_sp.object_id
 }
 
 
