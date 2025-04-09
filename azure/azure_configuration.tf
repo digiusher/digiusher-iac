@@ -91,3 +91,19 @@ resource "azapi_resource" "digiusher_reservations_reader" {
     }
   }
 }
+
+output "application_id" {
+  description = "The Application ID (Client ID) of the DigiUsher application"
+  value       = azuread_application.digiusher_app.application_id
+}
+
+output "tenant_id" {
+  description = "The Tenant ID where the application is registered"
+  value       = var.tenant_id
+}
+
+output "client_secret" {
+  description = "The Client Secret for the DigiUsher application"
+  value       = azuread_application_password.app_password.value
+  sensitive   = true
+}

@@ -51,20 +51,17 @@ terraform apply -var-file="terraform.tfvars"
 
 5. **Retrieve Application Credentials**:
 
+After successful application, you can retrieve the credentials using the following commands:
+
 ```bash
-terraform output -json app_info > output.json
-```
+# Get Application (Client) ID
+terraform output application_id
 
-## Output
+# Get Tenant ID
+terraform output tenant_id
 
-The `app_info` output contains:
-
-- Application (Client) ID
-- Tenant ID
-- Application Secret (sensitive)
-- List of accessible subscriptions
-
-Store this information securely as it contains sensitive credentials.
+# Get Client Secret (sensitive)
+terraform output -json client_secret
 
 ## Security Considerations
 
