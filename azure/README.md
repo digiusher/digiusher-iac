@@ -64,6 +64,7 @@ terraform output tenant_id
 terraform output -json client_secret
 
 ## Error Scenarios
+```
 
 **Authorization Error**
 If you encounter:
