@@ -89,13 +89,12 @@ resource "azurerm_role_definition" "digiusher_power_scheduler" {
     actions = [
       "Microsoft.Compute/virtualMachines/start/action",
       "Microsoft.Compute/virtualMachines/deallocate/action",
+      "Microsoft.Compute/virtualMachines/read"
     ]
     not_actions = []
   }
 
-  assignable_scopes = [
-    "/subscriptions/${var.subscription_id}"
-  ]
+  assignable_scopes = [for sub_id in local.subscriptions : "/subscriptions/${sub_id}"]
 }
 
 # Assign Reader role to the service principal in each subscription
