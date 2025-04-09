@@ -62,6 +62,7 @@ terraform output tenant_id
 
 # Get Client Secret (sensitive)
 terraform output -json client_secret
+```
 
 ## Error Scenarios
 
