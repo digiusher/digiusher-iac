@@ -119,6 +119,10 @@ data "azurerm_role_definition" "reservations_reader" {
   name = "Reservations Reader"
 }
 
+data "azurerm_role_definition" "savings_plan_reader" {
+  name = "Savings Plan Reader"
+}
+
 
 resource "azapi_resource" "digiusher_reservations_reader" {
   name      = uuid()
@@ -128,6 +132,19 @@ resource "azapi_resource" "digiusher_reservations_reader" {
     properties = {
       principalId      = azuread_service_principal.digiusher_app_sp.object_id
       roleDefinitionId = data.azurerm_role_definition.reservations_reader.id
+      principalType    = "ServicePrincipal"
+    }
+  }
+}
+
+resource "azapi_resource" "digiusher_savings_plan_reader" {
+  name      = uuid()
+  type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
+  parent_id = "/providers/Microsoft.BillingBenefits"
+  body = {
+    properties = {
+      principalId      = azuread_service_principal.digiusher_app_sp.object_id
+      roleDefinitionId = data.azurerm_role_definition.savings_plan_reader.id
       principalType    = "ServicePrincipal"
     }
   }

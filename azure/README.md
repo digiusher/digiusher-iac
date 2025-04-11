@@ -19,14 +19,15 @@ Before you begin, ensure you have:
 - Terraform installed on your local machine (version 1.0.0 or higher)
 - Global Administrator or Application Administrator role in Azure AD
 - Owner or User Access Administrator role in the target subscriptions
-- Global Administrator access for Reservations Reader role assignment
-  - Note: You need to temporarily elevate access for assigning the Reservation Reader permission. The process is [documented here](https://learn.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin)
+- Global Administrator access for Reservations Reader and Savings Plan Reader role assignments
+  - Note: You need to temporarily elevate access for assigning both the Reservation Reader and Savings Plan Reader permissions. The process is [documented here](https://learn.microsoft.com/en-us/azure/role-based-access-control/elevate-access-global-admin)
 
 ## Permissions Overview
 
 The service principal will be granted:
 1. Reader role on all target subscriptions
 2. Reservations Reader role at the tenant level
+3. Savings Plan Reader role at the tenant level
 
 ## Instructions
 
