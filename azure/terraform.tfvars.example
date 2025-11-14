@@ -1,10 +1,31 @@
 subscription_id = "your-subscription-id"
 tenant_id       = "your-tenant-id"
 
-# Or leave as [] to use all subscription ids
-target_subscription_ids = [
-    "your-subscription-id-1",
-    "your-subscription-id-2"
-]
+# Billing Account Configuration
+# For EA: Provide your enrollment number (6-7 digits)
+# For MCA: Provide both billing_account_id and billing_profile_id
+# Leave empty to use subscription scope (NOT RECOMMENDED - FOCUS won't work for most customers)
+billing_account_id = ""  # YOUR ENROLLMENT NUMBER or BILLING ACCOUNT ID
+billing_profile_id = ""  # Only needed for MCA
 
-enable_power_scheduler = true
+# Following fields can be left on defaults unless you want to customize something
+# Target subscriptions (leave empty [] to use all subscriptions)
+target_subscription_ids = []
+
+# Enable VM power management (optional)
+enable_power_scheduler = false
+
+# ============================================================================
+# FOCUS EXPORT CONFIGURATION
+# ============================================================================
+
+# Enable FOCUS cost exports (recommended: true)
+enable_cost_exports = true
+
+# Storage configuration (optional - will auto-generate if empty)
+storage_account_name = ""
+
+# Export settings (optional - defaults are good)
+export_recurrence = "Daily"
+focus_version = "1.0"
+export_file_format = "Csv"
