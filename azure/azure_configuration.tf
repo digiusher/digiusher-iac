@@ -204,9 +204,12 @@ data "azurerm_role_definition" "savings_plan_reader" {
 }
 
 resource "azapi_resource" "digiusher_reservations_reader" {
-  name      = uuid()
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-reservations-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.Capacity"
+  lifecycle {
+    ignore_changes = [name]
+  }
   body = {
     properties = {
       principalId      = azuread_service_principal.digiusher_app_sp.object_id
@@ -217,7 +220,10 @@ resource "azapi_resource" "digiusher_reservations_reader" {
 }
 
 resource "azapi_resource" "digiusher_savings_plan_reader" {
-  name      = uuid()
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-savings-plan-reader")
+  lifecycle {
+    ignore_changes = [name]
+  }
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.BillingBenefits"
   body = {
@@ -260,14 +266,14 @@ resource "azurerm_storage_account" "export_storage" {
 resource "azurerm_storage_container" "export_container" {
   count                 = var.enable_cost_exports ? 1 : 0
   name                  = var.storage_container_name
-  storage_account_name  = azurerm_storage_account.export_storage[0].name
+  storage_account_id    = azurerm_storage_account.export_storage[0].id
   container_access_type = "private"
 }
 
 # Cost Management Reader at billing scope
 resource "azapi_resource" "cost_management_reader_assignment" {
   count     = var.enable_cost_exports ? 1 : 0
-  name      = uuid()
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-management-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = local.billing_scope
 
@@ -277,6 +283,9 @@ resource "azapi_resource" "cost_management_reader_assignment" {
       roleDefinitionId = "${local.billing_scope}/providers/Microsoft.Authorization/roleDefinitions/72fafb9e-0641-4937-9268-a91bfd8191a3"
       principalType    = "ServicePrincipal"
     }
+  }
+  lifecycle {
+    ignore_changes = [name]
   }
 }
 
