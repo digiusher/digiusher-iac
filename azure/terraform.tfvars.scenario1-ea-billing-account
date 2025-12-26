@@ -1,0 +1,28 @@
+# Scenario 1: EA Without Enrollment Account
+#
+# Use this when:
+# - Enterprise Agreement enrollment
+# - No dedicated enrollment account structure
+# - Export will contain ALL subscriptions (filter in DigiUsher)
+
+# Subscription and tenant
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
+
+# EA configuration
+billing_scope_level = "billing_account"
+billing_account_id  = "REPLACE_WITH_ENROLLMENT_NUMBER"
+
+# Storage (leave empty for auto-generated name)
+storage_account_name   = ""
+storage_container_name = "focus-exports"
+
+# Enable FOCUS exports
+enable_cost_exports = true
+
+# Optional: VM power scheduler
+enable_power_scheduler = false
+
+# Optional: Target specific subscriptions for Reader role
+# Leave empty to target all subscriptions
+target_subscription_ids = []

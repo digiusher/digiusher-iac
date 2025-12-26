@@ -1,0 +1,31 @@
+# Scenario 3: MCA Invoice Section
+#
+# Use this when:
+# - Microsoft Customer Agreement (not EA)
+# - Small to medium deployments with direct billing access
+# - Export contains ONLY subscriptions in invoice section
+
+# Subscription and tenant
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
+
+# MCA configuration
+billing_scope_level = "invoice_section"
+billing_account_id  = "REPLACE_WITH_BILLING_ACCOUNT_ID"
+billing_profile_id  = "REPLACE_WITH_BILLING_PROFILE_ID"
+invoice_section_id  = "REPLACE_WITH_INVOICE_SECTION_ID"
+
+# Storage (leave empty for auto-generated name)
+storage_account_name   = ""
+storage_container_name = "focus-exports"
+
+# Enable FOCUS exports
+enable_cost_exports = true
+
+# Optional: VM power scheduler
+enable_power_scheduler = false
+
+# Optional: Target specific subscriptions for Reader role
+# Leave empty to target all subscriptions in invoice section
+target_subscription_ids = []
+

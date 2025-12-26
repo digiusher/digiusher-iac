@@ -27,5 +27,4 @@ storage_account_name = ""
 
 # Export settings (optional - defaults are good)
 export_recurrence = "Daily"
-focus_version = "1.0"
 export_file_format = "Csv"
