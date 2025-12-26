@@ -206,7 +206,7 @@ terraform output -raw client_secret > client_secret.txt
 terraform output application_id
 terraform output tenant_id
 terraform output storage_account_name
-terraform output export_container_name
+terraform output storage_container_name
 ```
 
 ---
@@ -231,7 +231,7 @@ Application ID:     $(terraform output application_id)
 Tenant ID:          $(terraform output tenant_id)
 Client Secret:      $(cat client_secret.txt)
 Storage Account:    $(terraform output storage_account_name)
-Container:          $(terraform output export_container_name)
+Container:          $(terraform output storage_container_name)
 ```
 
 ---
