@@ -274,6 +274,12 @@ resource "azapi_resource" "digiusher_savings_plan_reader" {
 # FOCUS EXPORT RESOURCES
 # ============================================================================
 
+# Register the CostManagementExports provider (required for exports)
+resource "azurerm_resource_provider_registration" "cost_management_exports" {
+  count = var.enable_cost_exports ? 1 : 0
+  name  = "Microsoft.CostManagementExports"
+}
+
 resource "azurerm_resource_group" "export_rg" {
   count    = var.enable_cost_exports ? 1 : 0
   name     = "digiusher-billing-exports"
@@ -301,7 +307,7 @@ resource "azurerm_storage_account" "export_storage" {
 resource "azurerm_storage_container" "export_container" {
   count                 = var.enable_cost_exports ? 1 : 0
   name                  = var.storage_container_name
-  storage_account_name  = azurerm_storage_account.export_storage[0].name
+  storage_account_id  = azurerm_storage_account.export_storage[0].id
   container_access_type = "private"
 }
 
@@ -315,7 +321,7 @@ resource "azapi_resource" "cost_management_reader_assignment" {
   body = {
     properties = {
       principalId      = azuread_service_principal.digiusher_app_sp.object_id
-      roleDefinitionId = "${local.billing_scope}/providers/Microsoft.Authorization/roleDefinitions/72fafb9e-0641-4937-9268-a91bfd8191a3"
+      roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/72fafb9e-0641-4937-9268-a91bfd8191a3"
       principalType    = "ServicePrincipal"
     }
   }
@@ -378,6 +384,7 @@ resource "azapi_resource" "focus_export" {
   }
 
   depends_on = [
+    azurerm_resource_provider_registration.cost_management_exports,
     azurerm_storage_container.export_container,
     azurerm_role_assignment.storage_blob_contributor,
     azapi_resource.cost_management_reader_assignment
@@ -410,6 +417,11 @@ output "client_secret" {
   sensitive   = true
 }
 
+output "subscription_id" {
+  description = "The Subscription ID where resources are deployed"
+  value       = var.subscription_id
+}
+
 output "storage_account_name" {
   description = "Storage account name for cost exports"
   value       = var.enable_cost_exports ? azurerm_storage_account.export_storage[0].name : null
@@ -436,6 +448,19 @@ output "billing_scope_type" {
 }
 
 output "backfill_command" {
-  description = "Command to run historical data backfill"
-  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --tenant-id ${var.tenant_id} --client-id ${azuread_application.digiusher_app.client_id} --billing-scope '${local.billing_scope}' --export-name ${azapi_resource.focus_export[0].name} --months 13" : null
+  description = "Command to run historical data backfill (run once per month)"
+  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --tenant-id ${var.tenant_id} --client-id ${azuread_application.digiusher_app.client_id} --billing-scope '${local.billing_scope}' --export-name ${azapi_resource.focus_export[0].name} --month YYYY-MM" : null
+}
+
+output "digiusher_onboarding" {
+  description = "Values needed for DigiUsher onboarding"
+  value = {
+    tenant_id              = var.tenant_id
+    application_id         = azuread_application.digiusher_app.client_id
+    client_secret          = azuread_application_password.app_password.value
+    subscription_id        = var.subscription_id
+    storage_account_name   = var.enable_cost_exports ? azurerm_storage_account.export_storage[0].name : null
+    storage_container_name = var.enable_cost_exports ? var.storage_container_name : null
+  }
+  sensitive = true
 }

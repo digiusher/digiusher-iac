@@ -15,7 +15,7 @@ billing_account_id  = "REPLACE_WITH_ENROLLMENT_NUMBER"
 
 # Storage (leave empty for auto-generated name)
 storage_account_name   = ""
-storage_container_name = "focus-exports"
+storage_container_name = "diguisher-focus-exports"
 
 # Enable FOCUS exports
 enable_cost_exports = true

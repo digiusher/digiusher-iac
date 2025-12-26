@@ -209,6 +209,49 @@ terraform output storage_account_name
 terraform output storage_container_name
 ```
 
+### 6. Backfill historical data (optional)
+
+The daily export starts immediately, but you may want historical data. Run the backfill script for each month needed:
+
+```bash
+# Check if an export is already running
+python3 backfill_historical_data.py \
+  --tenant-id $(terraform output -raw tenant_id) \
+  --client-id $(terraform output -raw application_id) \
+  --client-secret $(cat client_secret.txt) \
+  --billing-scope "$(terraform output -raw billing_scope)" \
+  --export-name $(terraform output -raw export_name) \
+  --status
+
+# Export a single month
+python3 backfill_historical_data.py \
+  --tenant-id $(terraform output -raw tenant_id) \
+  --client-id $(terraform output -raw application_id) \
+  --client-secret $(cat client_secret.txt) \
+  --billing-scope "$(terraform output -raw billing_scope)" \
+  --export-name $(terraform output -raw export_name) \
+  --month 2024-06
+```
+
+**Note:** Azure only allows one export at a time. The script checks for in-progress exports and warns you to wait.
+
+For multiple months:
+```bash
+for m in 2024-{01..06}; do
+  python3 backfill_historical_data.py ... --month $m
+  sleep 300  # Wait 5 minutes between exports
+done
+```
+
+### 7. Verify exports
+
+```bash
+python3 verify_exports.py \
+  --storage-account $(terraform output -raw storage_account_name) \
+  --container $(terraform output -raw storage_container_name) \
+  --subscription $(terraform output -raw subscription_id)
+```
+
 ---
 
 ## What Gets Created
@@ -241,6 +284,7 @@ Container:          $(terraform output storage_container_name)
 **How do I know which scenario applies?**
 - Run `check_billing_type.py`
 - Or ask: "Do you have Enterprise Agreement?" and "Is there a dedicated enrollment account?"
+- Ask us at support@digiusher.com
 
 **What if there's no enrollment account?**
 - Use Scenario 1 (billing_account level)
@@ -275,9 +319,11 @@ Container:          $(terraform output storage_container_name)
 
 ## Files Reference
 
+- `azure_configuration.tf` - Main Terraform configuration
+- `terraform.tfvars` - Your configuration (create from scenario examples)
 - `check_billing_type.py` - Automatic billing type detection
-- `terraform.tfvars` - Your configuration (create from examples above)
-- `azure_configuration.tf` - Main Terraform configuration (don't modify)
+- `backfill_historical_data.py` - Trigger exports for historical months
+- `verify_exports.py` - Check export status and list available months
 
 ---
 
@@ -287,4 +333,5 @@ Container:          $(terraform output storage_container_name)
 2. Create `terraform.tfvars` from appropriate example
 3. Run `terraform apply`
 4. Save credentials
-5. Configure DigiUsher with output values
+5. Backfill historical data (optional)
+6. Configure DigiUsher with output values

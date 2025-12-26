@@ -10,14 +10,18 @@ subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
 tenant_id       = "REPLACE_WITH_TENANT_ID"
 
 # MCA configuration
-billing_scope_level = "invoice_section"
 billing_account_id  = "REPLACE_WITH_BILLING_ACCOUNT_ID"
-billing_profile_id  = "REPLACE_WITH_BILLING_PROFILE_ID"
-invoice_section_id  = "REPLACE_WITH_INVOICE_SECTION_ID"
+
+# Choose between billing account or invoice section
+billing_scope_level = "billing_account"
+# If using invoice section, set both billing_profile_id and invoice_section_id
+#billing_scope_level = "invoice_section"
+#billing_profile_id  = "REPLACE_WITH_BILLING_PROFILE_ID"
+#invoice_section_id  = "REPLACE_WITH_INVOICE_SECTION_ID"
 
 # Storage (leave empty for auto-generated name)
 storage_account_name   = ""
-storage_container_name = "focus-exports"
+storage_container_name = "digiusher-focus-exports"
 
 # Enable FOCUS exports
 enable_cost_exports = true
@@ -26,6 +30,5 @@ enable_cost_exports = true
 enable_power_scheduler = false
 
 # Optional: Target specific subscriptions for Reader role
-# Leave empty to target all subscriptions in invoice section
+# Leave empty to target all subscriptions
 target_subscription_ids = []
-
