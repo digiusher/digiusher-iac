@@ -54,8 +54,8 @@ You'll have one of these scenarios:
 |----------|-------|--------------|
 | **1** | EA - no enrollment account | `billing_account` |
 | **2** | EA - has enrollment account | `enrollment_account` |
-| **3** | MCA (like DigiUsher) | `invoice_section` |
-| **4** | Pay-as-you-go only | Not supported |
+| **3** | MCA | `invoice_section` |
+| **4** | MOSP/Pay-as-you-go only | Not supported |
 
 ---
 
