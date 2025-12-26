@@ -188,7 +188,8 @@ class FocusExportBackfill:
         if result["success"]:
             print(f"✅ Export triggered successfully (HTTP {result['status_code']})")
             print(f"\n   The export is now running in the background.")
-            print(f"   Check status with: python3 verify_exports.py --storage-account <name> --container <name>")
+            print(f"   Check status: python3 backfill_historical_data.py --from-terraform --status")
+            print(f"   View exports: python3 verify_exports.py --from-terraform")
         else:
             print(f"❌ Failed (HTTP {result['status_code']}): {result['response']}")
 
