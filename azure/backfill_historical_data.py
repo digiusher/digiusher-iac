@@ -56,7 +56,49 @@ class FocusExportBackfill:
         self.billing_scope = billing_scope
         self.export_name = export_name
         self.base_url = "https://management.azure.com"
-        self.api_version = "2023-07-01-preview"
+        self.api_version = "2025-03-01"
+
+    def get_latest_run_status(self) -> dict:
+        """Get the most recent export run status."""
+        url = f"{self.base_url}{self.billing_scope}/providers/Microsoft.CostManagement/exports/{self.export_name}/runHistory"
+
+        headers = {
+            "Authorization": f"Bearer {self.auth.get_token()}",
+            "Content-Type": "application/json",
+        }
+
+        response = requests.get(
+            url, headers=headers, params={"api-version": self.api_version}
+        )
+
+        if response.ok:
+            data = response.json()
+            runs = data.get("value", [])
+            if runs:
+                # Get most recent run - data is nested under 'properties'
+                latest = sorted(
+                    runs,
+                    key=lambda x: x.get("properties", {}).get("submittedTime", ""),
+                    reverse=True
+                )[0]
+                props = latest.get("properties", {})
+                return {
+                    "status": props.get("status", "Unknown"),
+                    "submitted": props.get("submittedTime", ""),
+                    "processing_start": props.get("processingStartTime", ""),
+                    "processing_end": props.get("processingEndTime", ""),
+                    "file_name": props.get("fileName", ""),
+                    "start_date": props.get("startDate", ""),
+                    "end_date": props.get("endDate", ""),
+                    "execution_type": props.get("executionType", ""),
+                }
+        return {"status": "Unknown"}
+
+    def is_export_in_progress(self) -> tuple[bool, dict]:
+        """Check if an export is currently running."""
+        run_info = self.get_latest_run_status()
+        in_progress = run_info.get("status") in ["Queued", "InProgress"]
+        return in_progress, run_info
 
     def execute_export_for_month(self, year: int, month: int) -> dict:
         """Execute export for a specific month."""
@@ -93,151 +135,209 @@ class FocusExportBackfill:
             "response": response.text if not response.ok else "Success",
         }
 
-    def backfill_months(self, num_months: int, start_from: str = None) -> list:
-        """Backfill specified number of months."""
-        results = []
+    def run_single_month(self, month_str: str) -> dict:
+        """Run export for a single month (format: YYYY-MM)."""
+        # Check if export is in progress
+        in_progress, run_info = self.is_export_in_progress()
 
-        if start_from:
-            current_date = datetime.strptime(start_from, "%Y-%m")
+        if in_progress:
+            print(f"\n⏳ An export is already in progress:")
+            print(f"   Status: {run_info.get('status')}")
+            print(f"   Started: {run_info.get('submitted', 'Unknown')}")
+            print(f"\n   Please wait for it to complete and try again.")
+            return {"success": False, "reason": "export_in_progress", "run_info": run_info}
+
+        # Parse month
+        try:
+            date = datetime.strptime(month_str, "%Y-%m")
+        except ValueError:
+            print(f"\n❌ Invalid month format: {month_str}")
+            print("   Expected format: YYYY-MM (e.g., 2024-06)")
+            return {"success": False, "reason": "invalid_format"}
+
+        year, month = date.year, date.month
+        print(f"\n🚀 Triggering export for {year}-{month:02d}")
+        print(f"   Billing Scope: {self.billing_scope}")
+        print(f"   Export Name: {self.export_name}\n")
+
+        result = self.execute_export_for_month(year, month)
+
+        if result["success"]:
+            print(f"✅ Export triggered successfully (HTTP {result['status_code']})")
+            print(f"\n   The export is now running in the background.")
+            print(f"   Check status with: python3 verify_exports.py --storage-account <name> --container <name>")
         else:
-            # Start from N months ago
-            current_date = datetime.now() - relativedelta(months=num_months)
+            print(f"❌ Failed (HTTP {result['status_code']}): {result['response']}")
 
-        end_date = datetime.now()
+        return result
 
-        print(
-            f"\n🚀 Starting backfill from {current_date.strftime('%Y-%m')} to {end_date.strftime('%Y-%m')}"
+
+def get_terraform_outputs() -> dict:
+    """Get values from terraform outputs."""
+    import subprocess
+
+    outputs = {}
+
+    # Get onboarding values
+    try:
+        result = subprocess.run(
+            ["terraform", "output", "-json", "digiusher_onboarding"],
+            capture_output=True,
+            text=True,
+            check=True
         )
-        print(f"📊 Billing Scope: {self.billing_scope}")
-        print(f"📦 Export Name: {self.export_name}\n")
+        outputs.update(json.loads(result.stdout))
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to get terraform output: {e.stderr}")
+        sys.exit(1)
 
-        month_count = 0
-        while current_date < end_date:
-            month_count += 1
-            year = current_date.year
-            month = current_date.month
-
-            print(
-                f"[{month_count}] Processing {year}-{month:02d}...", end=" ", flush=True
+    # Get billing_scope and export_name separately
+    for key in ["billing_scope", "export_name"]:
+        try:
+            result = subprocess.run(
+                ["terraform", "output", "-raw", key],
+                capture_output=True,
+                text=True,
+                check=True
             )
+            outputs[key] = result.stdout.strip()
+        except subprocess.CalledProcessError:
+            print(f"❌ Failed to get terraform output: {key}")
+            sys.exit(1)
 
-            try:
-                result = self.execute_export_for_month(year, month)
-                results.append(result)
-
-                if result["success"]:
-                    print(f"✅ Success (HTTP {result['status_code']})")
-                else:
-                    print(
-                        f"❌ Failed (HTTP {result['status_code']}): {result['response']}"
-                    )
-
-                # Rate limiting - wait 2 seconds between requests
-                time.sleep(2)
-
-            except Exception as e:
-                print(f"❌ Error: {str(e)}")
-                results.append(
-                    {"year": year, "month": month, "success": False, "error": str(e)}
-                )
-
-            current_date += relativedelta(months=1)
-
-        return results
+    return outputs
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Backfill historical FOCUS cost export data",
+        description="Trigger FOCUS cost export for a specific month",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Backfill last 13 months
-  python3 backfill_historical_data.py --months 13
+  # Using terraform output (easiest)
+  python3 backfill_historical_data.py --from-terraform --month 2024-06
+  python3 backfill_historical_data.py --from-terraform --status
 
-  # Backfill from specific date
-  python3 backfill_historical_data.py --start-from 2023-01 --months 24
+  # Using explicit credentials
+  python3 backfill_historical_data.py --month 2024-06 \\
+    --tenant-id <tenant> --client-id <client> --client-secret <secret> \\
+    --billing-scope <scope> --export-name <name>
 
-  # Backfill maximum (7 years)
-  python3 backfill_historical_data.py --months 84
+  # For multiple months, run once per month:
+  for m in 2024-{01..06}; do
+    python3 backfill_historical_data.py --from-terraform --month $m
+    sleep 300  # Wait 5 minutes between exports
+  done
         """,
     )
 
-    parser.add_argument("--tenant-id", required=True, help="Azure Tenant ID")
     parser.add_argument(
-        "--client-id", required=True, help="Service Principal Client ID"
+        "--from-terraform", action="store_true",
+        help="Read credentials from terraform output"
     )
-    parser.add_argument(
-        "--client-secret",
-        help="Service Principal Client Secret (will prompt if not provided)",
-    )
+    parser.add_argument("--tenant-id", help="Azure Tenant ID")
+    parser.add_argument("--client-id", help="Service Principal Client ID")
+    parser.add_argument("--client-secret", help="Service Principal Client Secret")
     parser.add_argument(
         "--billing-scope",
-        required=True,
         help="Billing scope (e.g., /providers/Microsoft.Billing/billingAccounts/123456)",
     )
-    parser.add_argument("--export-name", required=True, help="Name of the export")
+    parser.add_argument("--export-name", help="Name of the export")
     parser.add_argument(
-        "--months",
-        type=int,
-        default=13,
-        help="Number of months to backfill (max 84 for 7 years)",
+        "--month",
+        help="Month to export in YYYY-MM format (e.g., 2024-06)",
     )
     parser.add_argument(
-        "--start-from",
-        help="Start month in YYYY-MM format (default: N months ago from today)",
+        "--status",
+        action="store_true",
+        help="Check current export status only (no export triggered)",
     )
-    parser.add_argument("--output", help="Output file for results (JSON format)")
 
     args = parser.parse_args()
 
-    # Validate months
-    if args.months < 1 or args.months > 84:
-        print("❌ Error: --months must be between 1 and 84 (7 years)")
-        sys.exit(1)
+    if not args.month and not args.status:
+        parser.error("Either --month or --status is required")
 
-    # Get client secret
-    client_secret = args.client_secret
-    if not client_secret:
-        import getpass
+    # Get credentials
+    if args.from_terraform:
+        print("📥 Reading credentials from terraform output...")
+        outputs = get_terraform_outputs()
+        tenant_id = outputs["tenant_id"]
+        client_id = outputs["application_id"]
+        client_secret = outputs["client_secret"]
+        billing_scope = outputs["billing_scope"]
+        export_name = outputs["export_name"]
+    else:
+        if not all([args.tenant_id, args.client_id, args.billing_scope, args.export_name]):
+            parser.error("Either --from-terraform or all credential arguments are required")
+        tenant_id = args.tenant_id
+        client_id = args.client_id
+        billing_scope = args.billing_scope
+        export_name = args.export_name
 
-        client_secret = getpass.getpass("Enter Client Secret: ")
+        # Get client secret
+        client_secret = args.client_secret
+        if not client_secret:
+            import getpass
+            client_secret = getpass.getpass("Enter Client Secret: ")
 
     # Authenticate
     print("🔐 Authenticating with Azure...")
-    auth = AzureAuthenticator(args.tenant_id, args.client_id, client_secret)
+    auth = AzureAuthenticator(tenant_id, client_id, client_secret)
 
     try:
         auth.get_token()
-        print("✅ Authentication successful\n")
+        print("✅ Authentication successful")
     except Exception as e:
         print(f"❌ Authentication failed: {str(e)}")
         sys.exit(1)
 
-    # Execute backfill
-    backfill = FocusExportBackfill(auth, args.billing_scope, args.export_name)
-    results = backfill.backfill_months(args.months, args.start_from)
+    backfill = FocusExportBackfill(auth, billing_scope, export_name)
 
-    # Summary
-    success_count = sum(1 for r in results if r.get("success"))
-    failed_count = len(results) - success_count
+    # Status check only
+    if args.status:
+        in_progress, run_info = backfill.is_export_in_progress()
+        status = run_info.get('status', 'Unknown')
 
-    print(f"\n" + "=" * 60)
-    print(f"📊 BACKFILL SUMMARY")
-    print(f"=" * 60)
-    print(f"✅ Successful: {success_count}")
-    print(f"❌ Failed: {failed_count}")
-    print(f"📝 Total: {len(results)}")
-    print(f"=" * 60)
+        print(f"\n📊 Export Status: {status}")
 
-    # Save results if requested
-    if args.output:
-        with open(args.output, "w") as f:
-            json.dump(results, f, indent=2)
-        print(f"\n💾 Results saved to {args.output}")
+        if status != "Unknown":
+            # Format dates nicely
+            submitted = run_info.get('submitted', '')
+            if submitted:
+                submitted = submitted[:19].replace('T', ' ')  # Trim to readable format
 
-    # Exit with error code if any failed
-    sys.exit(0 if failed_count == 0 else 1)
+            start_date = run_info.get('start_date', '')[:10] if run_info.get('start_date') else ''
+            end_date = run_info.get('end_date', '')[:10] if run_info.get('end_date') else ''
+            period = f"{start_date} to {end_date}" if start_date and end_date else "N/A"
+
+            exec_type = run_info.get('execution_type', 'N/A')
+
+            print(f"   Period: {period}")
+            print(f"   Type: {exec_type}")
+            print(f"   Submitted: {submitted}")
+
+            # Only show processing times if they're real values
+            proc_start = run_info.get('processing_start', '')
+            proc_end = run_info.get('processing_end', '')
+            if proc_start and not proc_start.startswith('0001'):
+                print(f"   Processing Start: {proc_start[:19].replace('T', ' ')}")
+            if proc_end and not proc_end.startswith('0001'):
+                print(f"   Processing End: {proc_end[:19].replace('T', ' ')}")
+
+            file_name = run_info.get('file_name', '')
+            if file_name:
+                print(f"   Output: {file_name}")
+
+        if in_progress:
+            print(f"\n   ⏳ Export is in progress. Wait before triggering another.")
+        else:
+            print(f"\n   ✅ No export in progress. Ready for new export.")
+        sys.exit(0)
+
+    # Run export for single month
+    result = backfill.run_single_month(args.month)
+    sys.exit(0 if result.get("success") else 1)
 
 
 if __name__ == "__main__":
