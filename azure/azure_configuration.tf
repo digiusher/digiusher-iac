@@ -120,6 +120,12 @@ variable "export_file_format" {
   default     = "Csv"
 }
 
+variable "export_root_path" {
+  type        = string
+  description = "Root folder path within the container for exports"
+  default     = "focus"
+}
+
 # ============================================================================
 # DATA SOURCES
 # ============================================================================
@@ -142,6 +148,9 @@ locals {
   # Storage account naming
   storage_account_name = var.storage_account_name != "" ? var.storage_account_name : "digiusher${substr(md5(var.tenant_id), 0, 10)}"
 
+  # Detect billing account type: MCA billing account IDs contain colons
+  is_mca = var.billing_account_id != "" && can(regex(":", var.billing_account_id))
+
   # Billing scope determination
   billing_scope = (
     var.billing_scope_level == "enrollment_account" ?
@@ -159,7 +168,7 @@ locals {
     var.billing_scope_level == "enrollment_account" ? "EA-EnrollmentAccount" :
     var.billing_scope_level == "invoice_section" ? "MCA-InvoiceSection" :
     var.billing_scope_level == "customer" ? "MPA-Customer" :
-    var.billing_scope_level == "billing_account" ? "EA/MCA-BillingAccount" :
+    var.billing_scope_level == "billing_account" ? (local.is_mca ? "MCA-BillingAccount" : "EA-BillingAccount") :
     "Subscription"
   )
 }
@@ -294,11 +303,6 @@ resource "azurerm_storage_account" "export_storage" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
 
-  network_rules {
-    default_action = "Allow"
-    bypass         = ["AzureServices"]
-  }
-
   tags = {
     purpose = "DigiUsher Cost Exports"
   }
@@ -311,23 +315,39 @@ resource "azurerm_storage_container" "export_container" {
   container_access_type = "private"
 }
 
-# Cost Management Reader at billing scope
-resource "azapi_resource" "cost_management_reader_assignment" {
-  count     = var.enable_cost_exports ? 1 : 0
-  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-mgmt-reader-${md5(local.billing_scope)}")
+# Cost Management Contributor at billing scope (for EA - required to trigger exports)
+resource "azapi_resource" "cost_management_contributor_assignment" {
+  count     = var.enable_cost_exports && !local.is_mca ? 1 : 0
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-mgmt-contributor-${md5(local.billing_scope)}")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = local.billing_scope
 
   body = {
     properties = {
       principalId      = azuread_service_principal.digiusher_app_sp.object_id
-      roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/72fafb9e-0641-4937-9268-a91bfd8191a3"
+      roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/434105ed-43f6-45c7-a02f-909b2ba83430"
       principalType    = "ServicePrincipal"
     }
   }
 
   lifecycle {
     ignore_changes = [name]
+  }
+}
+
+# Billing account contributor role for MCA (required to trigger exports)
+# MCA uses a separate billing RBAC system - standard ARM RBAC roles don't apply
+resource "azapi_resource_action" "mca_billing_contributor" {
+  count       = var.enable_cost_exports && local.is_mca ? 1 : 0
+  type        = "Microsoft.Billing/billingAccounts@2024-04-01"
+  resource_id = "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}"
+  action      = "createBillingRoleAssignment"
+  method      = "POST"
+
+  body = {
+    principalId       = azuread_service_principal.digiusher_app_sp.object_id
+    principalTenantId = var.tenant_id
+    roleDefinitionId  = "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}/billingRoleDefinitions/50000000-aaaa-bbbb-cccc-100000000001"
   }
 }
 
@@ -366,7 +386,7 @@ resource "azapi_resource" "focus_export" {
           type           = "AzureBlob"
           resourceId     = azurerm_storage_account.export_storage[0].id
           container      = var.storage_container_name
-          rootFolderPath = "focus"
+          rootFolderPath = var.export_root_path
         }
       }
       definition = {
@@ -387,7 +407,8 @@ resource "azapi_resource" "focus_export" {
     azurerm_resource_provider_registration.cost_management_exports,
     azurerm_storage_container.export_container,
     azurerm_role_assignment.storage_blob_contributor,
-    azapi_resource.cost_management_reader_assignment
+    azapi_resource.cost_management_contributor_assignment,
+    azapi_resource_action.mca_billing_contributor
   ]
 
   lifecycle {
@@ -400,37 +421,6 @@ resource "azapi_resource" "focus_export" {
 # ============================================================================
 # OUTPUTS
 # ============================================================================
-
-output "application_id" {
-  description = "The Application ID (Client ID) of the DigiUsher application"
-  value       = azuread_application.digiusher_app.client_id
-}
-
-output "tenant_id" {
-  description = "The Tenant ID where the application is registered"
-  value       = var.tenant_id
-}
-
-output "client_secret" {
-  description = "The Client Secret for the DigiUsher application"
-  value       = azuread_application_password.app_password.value
-  sensitive   = true
-}
-
-output "subscription_id" {
-  description = "The Subscription ID where resources are deployed"
-  value       = var.subscription_id
-}
-
-output "storage_account_name" {
-  description = "Storage account name for cost exports"
-  value       = var.enable_cost_exports ? azurerm_storage_account.export_storage[0].name : null
-}
-
-output "storage_container_name" {
-  description = "Container name for cost exports"
-  value       = var.enable_cost_exports ? var.storage_container_name : null
-}
 
 output "export_name" {
   description = "Name of the FOCUS export"
@@ -461,6 +451,7 @@ output "digiusher_onboarding" {
     subscription_id        = var.subscription_id
     storage_account_name   = var.enable_cost_exports ? azurerm_storage_account.export_storage[0].name : null
     storage_container_name = var.enable_cost_exports ? var.storage_container_name : null
+    export_root_path       = var.enable_cost_exports ? var.export_root_path : null
   }
   sensitive = true
 }

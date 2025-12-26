@@ -16,7 +16,7 @@ Our solution creates a single Azure AD application with a service principal that
 1. **Azure AD Application** and Service Principal
 2. **Role Assignments:**
    - Reader (subscription level)
-   - Cost Management Reader (billing scope level)
+   - Cost Management Contributor (billing scope level - required to trigger exports)
    - Reservations Reader (tenant level)
    - Savings Plan Reader (tenant level)
    - Optional: Power Scheduler (VM start/stop)
@@ -196,17 +196,14 @@ terraform plan
 terraform apply
 ```
 
-### 5. Save credentials
+### 5. Save onboarding credentials
 
 ```bash
-# Save client secret securely
-terraform output -raw client_secret > client_secret.txt
+# Get all values needed for DigiUsher onboarding
+terraform output -json digiusher_onboarding
 
-# Note these values for DigiUsher configuration
-terraform output application_id
-terraform output tenant_id
-terraform output storage_account_name
-terraform output storage_container_name
+# Or save to file
+terraform output -json digiusher_onboarding > digiusher_credentials.json
 ```
 
 ### 6. Backfill historical data (optional)
@@ -215,22 +212,10 @@ The daily export starts immediately, but you may want historical data. Run the b
 
 ```bash
 # Check if an export is already running
-python3 backfill_historical_data.py \
-  --tenant-id $(terraform output -raw tenant_id) \
-  --client-id $(terraform output -raw application_id) \
-  --client-secret $(cat client_secret.txt) \
-  --billing-scope "$(terraform output -raw billing_scope)" \
-  --export-name $(terraform output -raw export_name) \
-  --status
+python3 backfill_historical_data.py --from-terraform --status
 
 # Export a single month
-python3 backfill_historical_data.py \
-  --tenant-id $(terraform output -raw tenant_id) \
-  --client-id $(terraform output -raw application_id) \
-  --client-secret $(cat client_secret.txt) \
-  --billing-scope "$(terraform output -raw billing_scope)" \
-  --export-name $(terraform output -raw export_name) \
-  --month 2024-06
+python3 backfill_historical_data.py --from-terraform --month 2024-06
 ```
 
 **Note:** Azure only allows one export at a time. The script checks for in-progress exports and warns you to wait.
@@ -238,7 +223,7 @@ python3 backfill_historical_data.py \
 For multiple months:
 ```bash
 for m in 2024-{01..06}; do
-  python3 backfill_historical_data.py ... --month $m
+  python3 backfill_historical_data.py --from-terraform --month $m
   sleep 300  # Wait 5 minutes between exports
 done
 ```
@@ -246,10 +231,8 @@ done
 ### 7. Verify exports
 
 ```bash
-python3 verify_exports.py \
-  --storage-account $(terraform output -raw storage_account_name) \
-  --container $(terraform output -raw storage_container_name) \
-  --subscription $(terraform output -raw subscription_id)
+# Uses service principal credentials from terraform output
+python3 verify_exports.py --from-terraform
 ```
 
 ---
@@ -267,15 +250,13 @@ python3 verify_exports.py \
 
 ## DigiUsher Configuration
 
-After deployment, configure DigiUsher with these values:
+After deployment, provide DigiUsher with the onboarding values:
 
 ```bash
-Application ID:     $(terraform output application_id)
-Tenant ID:          $(terraform output tenant_id)
-Client Secret:      $(cat client_secret.txt)
-Storage Account:    $(terraform output storage_account_name)
-Container:          $(terraform output storage_container_name)
+terraform output -json digiusher_onboarding
 ```
+
+This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`, `storage_account_name`, `storage_container_name`, `export_root_path`
 
 ---
 
