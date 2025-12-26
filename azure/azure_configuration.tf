@@ -55,15 +55,44 @@ variable "enable_cost_exports" {
   default     = true
 }
 
+variable "billing_scope_level" {
+  type        = string
+  description = "Billing scope level: billing_account (EA/MCA top-level), enrollment_account (EA sub-scope), invoice_section (MCA sub-scope), customer (MPA/CSP), or subscription"
+  default     = "billing_account"
+
+  validation {
+    condition     = contains(["billing_account", "enrollment_account", "invoice_section", "customer", "subscription"], var.billing_scope_level)
+    error_message = "billing_scope_level must be one of: billing_account, enrollment_account, invoice_section, customer, subscription"
+  }
+}
+
 variable "billing_account_id" {
   type        = string
   description = "Billing account ID. For EA: enrollment number. For MCA: billing account ID. Leave empty to use subscription scope (not recommended for production)."
   default     = ""
 }
 
+variable "enrollment_account_id" {
+  type        = string
+  description = "Enrollment Account ID (only for EA with enrollment_account scope). Leave empty for billing_account level."
+  default     = ""
+}
+
 variable "billing_profile_id" {
   type        = string
-  description = "Billing profile ID (only required for MCA). Leave empty for EA."
+  description = "Billing profile ID (only required for MCA invoice_section scope). Leave empty for EA or billing_account level."
+  default     = ""
+}
+
+variable "invoice_section_id" {
+  type        = string
+  description = "Invoice Section ID (only for MCA with invoice_section scope). Leave empty for other scopes."
+  default     = ""
+}
+
+variable "customer_id" {
+  type        = string
+  description = "Customer ID (only for MPA/CSP with customer scope). Leave empty for other scopes."
   default     = ""
 }
 
@@ -83,12 +112,6 @@ variable "export_recurrence" {
   type        = string
   description = "Export schedule: Daily, Weekly, Monthly, or Annually"
   default     = "Daily"
-}
-
-variable "focus_version" {
-  type        = string
-  description = "FOCUS dataset version"
-  default     = "1.0"
 }
 
 variable "export_file_format" {
@@ -120,15 +143,25 @@ locals {
   storage_account_name = var.storage_account_name != "" ? var.storage_account_name : "digiusher${substr(md5(var.tenant_id), 0, 10)}"
 
   # Billing scope determination
-  billing_scope = var.billing_account_id != "" ? (
-    var.billing_profile_id != "" ?
-      "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}/billingProfiles/${var.billing_profile_id}" :
-      "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}"
-  ) : "/subscriptions/${var.subscription_id}"
+  billing_scope = (
+    var.billing_scope_level == "enrollment_account" ?
+    "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}/enrollmentAccounts/${var.enrollment_account_id}" :
+    var.billing_scope_level == "invoice_section" ?
+    "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}/billingProfiles/${var.billing_profile_id}/invoiceSections/${var.invoice_section_id}" :
+    var.billing_scope_level == "customer" ?
+    "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}/customers/${var.customer_id}" :
+    var.billing_scope_level == "billing_account" ?
+    "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}" :
+    "/subscriptions/${var.subscription_id}"
+  )
 
-  billing_scope_type = var.billing_account_id != "" ? (
-    var.billing_profile_id != "" ? "MCA" : "EA"
-  ) : "Subscription"
+  billing_scope_type = (
+    var.billing_scope_level == "enrollment_account" ? "EA-EnrollmentAccount" :
+    var.billing_scope_level == "invoice_section" ? "MCA-InvoiceSection" :
+    var.billing_scope_level == "customer" ? "MPA-Customer" :
+    var.billing_scope_level == "billing_account" ? "EA/MCA-BillingAccount" :
+    "Subscription"
+  )
 }
 
 # ============================================================================
@@ -204,7 +237,7 @@ data "azurerm_role_definition" "savings_plan_reader" {
 }
 
 resource "azapi_resource" "digiusher_reservations_reader" {
-  name      = uuid()
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-reservations-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.Capacity"
   body = {
@@ -214,10 +247,14 @@ resource "azapi_resource" "digiusher_reservations_reader" {
       principalType    = "ServicePrincipal"
     }
   }
+
+  lifecycle {
+    ignore_changes = [name]
+  }
 }
 
 resource "azapi_resource" "digiusher_savings_plan_reader" {
-  name      = uuid()
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-savings-plan-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.BillingBenefits"
   body = {
@@ -226,6 +263,10 @@ resource "azapi_resource" "digiusher_savings_plan_reader" {
       roleDefinitionId = data.azurerm_role_definition.savings_plan_reader.id
       principalType    = "ServicePrincipal"
     }
+  }
+
+  lifecycle {
+    ignore_changes = [name]
   }
 }
 
@@ -267,7 +308,7 @@ resource "azurerm_storage_container" "export_container" {
 # Cost Management Reader at billing scope
 resource "azapi_resource" "cost_management_reader_assignment" {
   count     = var.enable_cost_exports ? 1 : 0
-  name      = uuid()
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-mgmt-reader-${md5(local.billing_scope)}")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = local.billing_scope
 
@@ -277,6 +318,10 @@ resource "azapi_resource" "cost_management_reader_assignment" {
       roleDefinitionId = "${local.billing_scope}/providers/Microsoft.Authorization/roleDefinitions/72fafb9e-0641-4937-9268-a91bfd8191a3"
       principalType    = "ServicePrincipal"
     }
+  }
+
+  lifecycle {
+    ignore_changes = [name]
   }
 }
 
@@ -292,7 +337,7 @@ resource "azurerm_role_assignment" "storage_blob_contributor" {
 resource "azapi_resource" "focus_export" {
   count     = var.enable_cost_exports ? 1 : 0
   name      = "digiusher-focus-export"
-  type      = "Microsoft.CostManagement/exports@2023-07-01-preview"
+  type      = "Microsoft.CostManagement/exports@2025-03-01"
   parent_id = local.billing_scope
 
   body = {
@@ -306,7 +351,7 @@ resource "azapi_resource" "focus_export" {
         recurrence = var.export_recurrence
         recurrencePeriod = {
           from = formatdate("YYYY-MM-DD'T'00:00:00'Z'", timestamp())
-          to   = formatdate("YYYY-MM-DD'T'00:00:00'Z'", timeadd(timestamp(), "26280h"))
+          to   = "2099-12-31T00:00:00Z"
         }
       }
       format = var.export_file_format
@@ -323,9 +368,6 @@ resource "azapi_resource" "focus_export" {
         timeframe = "MonthToDate"
         dataSet = {
           granularity = "Daily"
-          configuration = {
-            dataVersion = var.focus_version
-          }
         }
       }
       partitionData         = true
@@ -389,11 +431,11 @@ output "billing_scope" {
 }
 
 output "billing_scope_type" {
-  description = "Detected billing scope type (EA, MCA, or Subscription)"
+  description = "Detected billing scope type"
   value       = var.enable_cost_exports ? local.billing_scope_type : null
 }
 
 output "backfill_command" {
   description = "Command to run historical data backfill"
-  value = var.enable_cost_exports ? "python3 backfill_historical_data.py --tenant-id ${var.tenant_id} --client-id ${azuread_application.digiusher_app.client_id} --billing-scope '${local.billing_scope}' --export-name ${azapi_resource.focus_export[0].name} --months 13" : null
+  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --tenant-id ${var.tenant_id} --client-id ${azuread_application.digiusher_app.client_id} --billing-scope '${local.billing_scope}' --export-name ${azapi_resource.focus_export[0].name} --months 13" : null
 }
