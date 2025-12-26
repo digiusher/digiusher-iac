@@ -2,8 +2,8 @@
 """
 DigiUsher Azure FOCUS Export Historical Backfill Script
 
-This script backfills historical cost data by triggering export runs for past months.
-Can backfill up to 7 years (84 months) of historical data.
+Triggers FOCUS cost export runs for specific months. Use --month YYYY-MM to export
+a single month, or --status to check current export status.
 """
 
 import argparse
@@ -36,7 +36,7 @@ class AzureAuthenticator:
             "scope": "https://management.azure.com/.default",
         }
 
-        response = requests.post(url, data=data)
+        response = requests.post(url, data=data, timeout=30)
         response.raise_for_status()
 
         token_data = response.json()
@@ -67,32 +67,46 @@ class FocusExportBackfill:
             "Content-Type": "application/json",
         }
 
-        response = requests.get(
-            url, headers=headers, params={"api-version": self.api_version}
-        )
+        try:
+            response = requests.get(
+                url, headers=headers, params={"api-version": self.api_version}, timeout=30
+            )
+        except requests.RequestException as e:
+            print(f"   ⚠️  Network error checking status: {e}")
+            return {"status": "Error", "error": str(e)}
 
-        if response.ok:
+        if not response.ok:
+            error_msg = response.text[:200] if response.text else "No details"
+            print(f"   ⚠️  Failed to get export status (HTTP {response.status_code}): {error_msg}")
+            return {"status": "Error", "error": f"HTTP {response.status_code}"}
+
+        try:
             data = response.json()
-            runs = data.get("value", [])
-            if runs:
-                # Get most recent run - data is nested under 'properties'
-                latest = sorted(
-                    runs,
-                    key=lambda x: x.get("properties", {}).get("submittedTime", ""),
-                    reverse=True
-                )[0]
-                props = latest.get("properties", {})
-                return {
-                    "status": props.get("status", "Unknown"),
-                    "submitted": props.get("submittedTime", ""),
-                    "processing_start": props.get("processingStartTime", ""),
-                    "processing_end": props.get("processingEndTime", ""),
-                    "file_name": props.get("fileName", ""),
-                    "start_date": props.get("startDate", ""),
-                    "end_date": props.get("endDate", ""),
-                    "execution_type": props.get("executionType", ""),
-                }
-        return {"status": "Unknown"}
+        except json.JSONDecodeError:
+            print("   ⚠️  Invalid JSON response from Azure API")
+            return {"status": "Error", "error": "Invalid JSON"}
+
+        runs = data.get("value", [])
+        if not runs:
+            return {"status": "NoHistory"}
+
+        # Get most recent run - data is nested under 'properties'
+        latest = sorted(
+            runs,
+            key=lambda x: x.get("properties", {}).get("submittedTime", ""),
+            reverse=True
+        )[0]
+        props = latest.get("properties", {})
+        return {
+            "status": props.get("status", "Unknown"),
+            "submitted": props.get("submittedTime", ""),
+            "processing_start": props.get("processingStartTime", ""),
+            "processing_end": props.get("processingEndTime", ""),
+            "file_name": props.get("fileName", ""),
+            "start_date": props.get("startDate", ""),
+            "end_date": props.get("endDate", ""),
+            "execution_type": props.get("executionType", ""),
+        }
 
     def is_export_in_progress(self) -> tuple[bool, dict]:
         """Check if an export is currently running."""
@@ -123,15 +137,24 @@ class FocusExportBackfill:
             }
         }
 
-        response = requests.post(
-            url, headers=headers, json=payload, params={"api-version": self.api_version}
-        )
+        try:
+            response = requests.post(
+                url, headers=headers, json=payload, params={"api-version": self.api_version}, timeout=60
+            )
+        except requests.RequestException as e:
+            return {
+                "year": year,
+                "month": month,
+                "status_code": 0,
+                "success": False,
+                "response": f"Network error: {e}",
+            }
 
         return {
             "year": year,
             "month": month,
             "status_code": response.status_code,
-            "success": response.status_code in [200, 202],
+            "success": response.ok,
             "response": response.text if not response.ok else "Success",
         }
 
@@ -262,6 +285,14 @@ Examples:
     if args.from_terraform:
         print("📥 Reading credentials from terraform output...")
         outputs = get_terraform_outputs()
+
+        required_keys = ["tenant_id", "application_id", "client_secret", "billing_scope", "export_name"]
+        missing = [k for k in required_keys if k not in outputs or not outputs[k]]
+        if missing:
+            print(f"❌ Missing required terraform outputs: {', '.join(missing)}")
+            print("   Run 'terraform apply' first to create the export configuration.")
+            sys.exit(1)
+
         tenant_id = outputs["tenant_id"]
         client_id = outputs["application_id"]
         client_secret = outputs["client_secret"]
