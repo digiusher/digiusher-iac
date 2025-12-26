@@ -175,6 +175,38 @@ locals {
 }
 
 # ============================================================================
+# VARIABLE VALIDATION (cross-variable checks)
+# ============================================================================
+
+check "enrollment_account_required" {
+  assert {
+    condition     = var.billing_scope_level != "enrollment_account" || var.enrollment_account_id != ""
+    error_message = "enrollment_account_id is required when billing_scope_level is 'enrollment_account'"
+  }
+}
+
+check "invoice_section_required" {
+  assert {
+    condition     = var.billing_scope_level != "invoice_section" || (var.billing_profile_id != "" && var.invoice_section_id != "")
+    error_message = "billing_profile_id and invoice_section_id are required when billing_scope_level is 'invoice_section'"
+  }
+}
+
+check "customer_required" {
+  assert {
+    condition     = var.billing_scope_level != "customer" || var.customer_id != ""
+    error_message = "customer_id is required when billing_scope_level is 'customer'"
+  }
+}
+
+check "billing_account_required" {
+  assert {
+    condition     = var.billing_scope_level == "subscription" || var.billing_account_id != ""
+    error_message = "billing_account_id is required when billing_scope_level is not 'subscription'"
+  }
+}
+
+# ============================================================================
 # AZURE AD APPLICATION AND SERVICE PRINCIPAL
 # ============================================================================
 
