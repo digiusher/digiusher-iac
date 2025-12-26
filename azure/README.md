@@ -16,7 +16,7 @@ Our solution creates a single Azure AD application with a service principal that
 1. **Azure AD Application** and Service Principal
 2. **Role Assignments:**
    - Reader (subscription level)
-   - Cost Management Contributor (billing scope level - required to trigger exports)
+   - Cost Management Contributor (EA billing scope) or Billing Account Contributor (MCA billing scope)
    - Reservations Reader (tenant level)
    - Savings Plan Reader (tenant level)
    - Optional: Power Scheduler (VM start/stop)
@@ -244,7 +244,7 @@ python3 verify_exports.py --from-terraform
 - Reservations Reader and Savings Plan Reader roles
 - FOCUS export configuration
 - Storage account and container (if needed)
-- Cost Management Reader role at billing scope
+- Billing scope role assignment (Cost Management Contributor for EA, Billing Account Contributor for MCA)
 
 ---
 
@@ -294,7 +294,7 @@ This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`
 
 **"Permission denied on storage account"**
 - Need Owner role during initial setup
-- After setup, only Cost Management Reader needed
+- After setup, Contributor role is maintained for triggering historical exports
 
 ---
 
