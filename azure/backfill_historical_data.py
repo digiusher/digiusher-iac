@@ -123,6 +123,22 @@ class FocusExportBackfill:
         else:
             last_day = datetime(year, month + 1, 1) - timedelta(days=1)
 
+        # For current/future months, use yesterday as end date (Azure rejects future dates)
+        today = datetime.now()
+        yesterday = today - timedelta(days=1)
+        if last_day >= today:
+            last_day = yesterday
+
+        # Check if the date range is valid (first_day must be before or equal to last_day)
+        if first_day > last_day:
+            return {
+                "year": year,
+                "month": month,
+                "status_code": 0,
+                "success": False,
+                "response": f"Cannot export future month. First available date would be {first_day.strftime('%Y-%m-%d')}.",
+            }
+
         url = f"{self.base_url}{self.billing_scope}/providers/Microsoft.CostManagement/exports/{self.export_name}/run"
 
         headers = {
@@ -137,6 +153,8 @@ class FocusExportBackfill:
             }
         }
 
+        date_range = f"{first_day.strftime('%Y-%m-%d')} to {last_day.strftime('%Y-%m-%d')}"
+
         try:
             response = requests.post(
                 url, headers=headers, json=payload, params={"api-version": self.api_version}, timeout=60
@@ -145,6 +163,7 @@ class FocusExportBackfill:
             return {
                 "year": year,
                 "month": month,
+                "date_range": date_range,
                 "status_code": 0,
                 "success": False,
                 "response": f"Network error: {e}",
@@ -153,6 +172,7 @@ class FocusExportBackfill:
         return {
             "year": year,
             "month": month,
+            "date_range": date_range,
             "status_code": response.status_code,
             "success": response.ok,
             "response": response.text if not response.ok else "Success",
@@ -187,6 +207,7 @@ class FocusExportBackfill:
 
         if result["success"]:
             print(f"✅ Export triggered successfully (HTTP {result['status_code']})")
+            print(f"   Date range: {result.get('date_range', 'N/A')}")
             print(f"\n   The export is now running in the background.")
             print(f"   Check status: python3 backfill_historical_data.py --from-terraform --status")
             print(f"   View exports: python3 verify_exports.py --from-terraform")

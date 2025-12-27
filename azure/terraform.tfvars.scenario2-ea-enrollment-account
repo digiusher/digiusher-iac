@@ -21,6 +21,10 @@ storage_container_name = "digiusher-focus-exports"
 # Enable FOCUS exports
 enable_cost_exports = true
 
+# Recommended: Reservations & Savings Plans visibility
+# Requires temporarily enabling elevated access - see README
+enable_reservations_access = true
+
 # Optional: VM power scheduler
 enable_power_scheduler = false
 

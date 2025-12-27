@@ -8,7 +8,7 @@ Our solution creates a single Azure AD application with a service principal that
 
 - **Reader access** across target subscriptions
 - **FOCUS cost exports** at the appropriate billing scope
-- **Reservations & Savings Plans** visibility
+- **Reservations & Savings Plans** visibility (requires elevated access)
 - **Optional VM power management** capabilities (start/stop)
 
 ### What Gets Created
@@ -17,8 +17,8 @@ Our solution creates a single Azure AD application with a service principal that
 2. **Role Assignments:**
    - Reader (subscription level)
    - Cost Management Contributor (EA billing scope) or Billing Account Contributor (MCA billing scope)
-   - Reservations Reader (tenant level)
-   - Savings Plan Reader (tenant level)
+   - Reservations Reader (tenant level) - requires temporary elevated access
+   - Savings Plan Reader (tenant level) - requires temporary elevated access
    - Optional: Power Scheduler (VM start/stop)
 3. **Storage Account** for cost exports
 4. **FOCUS Cost Export** with daily schedule
@@ -37,6 +37,35 @@ Our solution creates a single Azure AD application with a service principal that
 - Azure CLI installed and logged in
 - Terraform installed
 - Billing account information
+
+---
+
+## Elevated Access for Reservations & Savings Plans
+
+The Reservations Reader and Savings Plan Reader roles are assigned at the **tenant level** (on `/providers/Microsoft.Capacity` and `/providers/Microsoft.BillingBenefits`). By default, even tenant administrators cannot assign roles at these scopes.
+
+### Option 1: Temporarily Enable Elevated Access (Recommended)
+
+To assign these roles, **temporarily** enable elevated access in Azure:
+
+1. Go to **Azure Portal** → **Microsoft Entra ID**
+2. Navigate to **Properties** (in the left menu)
+3. Scroll to **Access management for Azure resources**
+4. Set to **Yes** and click **Save**
+5. Run `terraform apply`
+6. **After successful deployment**, set it back to **No** for security
+
+This temporarily grants your account the **User Access Administrator** role at root scope (`/`), allowing the one-time tenant-level role assignments.
+
+### Option 2: Skip These Roles
+
+If you cannot enable elevated access or don't need reservations/savings plan visibility, set in your `terraform.tfvars`:
+
+```hcl
+enable_reservations_access = false
+```
+
+This will skip the Reservations Reader and Savings Plan Reader role assignments. The FOCUS cost export and other functionality will work normally.
 
 ---
 

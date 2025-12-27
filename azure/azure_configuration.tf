@@ -50,6 +50,12 @@ variable "enable_power_scheduler" {
   default     = false
 }
 
+variable "enable_reservations_access" {
+  type        = bool
+  description = "If true, adds Reservations Reader and Savings Plan Reader roles (requires tenant-level permissions)"
+  default     = true
+}
+
 variable "enable_cost_exports" {
   type        = bool
   description = "Creates FOCUS cost exports and assigns necessary permissions"
@@ -271,21 +277,24 @@ resource "azurerm_role_assignment" "digiusher_power_scheduler_role_assignment" {
 # ============================================================================
 
 data "azurerm_role_definition" "reservations_reader" {
-  name = "Reservations Reader"
+  count = var.enable_reservations_access ? 1 : 0
+  name  = "Reservations Reader"
 }
 
 data "azurerm_role_definition" "savings_plan_reader" {
-  name = "Savings Plan Reader"
+  count = var.enable_reservations_access ? 1 : 0
+  name  = "Savings Plan Reader"
 }
 
 resource "azapi_resource" "digiusher_reservations_reader" {
+  count     = var.enable_reservations_access ? 1 : 0
   name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-reservations-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.Capacity"
   body = {
     properties = {
       principalId      = azuread_service_principal.digiusher_app_sp.object_id
-      roleDefinitionId = data.azurerm_role_definition.reservations_reader.id
+      roleDefinitionId = data.azurerm_role_definition.reservations_reader[0].id
       principalType    = "ServicePrincipal"
     }
   }
@@ -296,13 +305,14 @@ resource "azapi_resource" "digiusher_reservations_reader" {
 }
 
 resource "azapi_resource" "digiusher_savings_plan_reader" {
+  count     = var.enable_reservations_access ? 1 : 0
   name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-savings-plan-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.BillingBenefits"
   body = {
     properties = {
       principalId      = azuread_service_principal.digiusher_app_sp.object_id
-      roleDefinitionId = data.azurerm_role_definition.savings_plan_reader.id
+      roleDefinitionId = data.azurerm_role_definition.savings_plan_reader[0].id
       principalType    = "ServicePrincipal"
     }
   }
@@ -427,6 +437,9 @@ resource "azapi_resource" "focus_export" {
         timeframe = "MonthToDate"
         dataSet = {
           granularity = "Daily"
+          configuration = {
+            dataVersion = "1.2-preview"
+          }
         }
       }
       partitionData         = true
@@ -481,7 +494,6 @@ output "digiusher_onboarding" {
     tenant_id              = var.tenant_id
     application_id         = azuread_application.digiusher_app.client_id
     client_secret          = azuread_application_password.app_password.value
-    subscription_id        = var.subscription_id
     storage_account_name   = var.enable_cost_exports ? azurerm_storage_account.export_storage[0].name : null
     storage_container_name = var.enable_cost_exports ? var.storage_container_name : null
     export_root_path       = var.enable_cost_exports ? var.export_root_path : null
