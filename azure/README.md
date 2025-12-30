@@ -1,34 +1,35 @@
 # DigiUsher Azure Integration Setup
 
-This guide provides complete instructions for setting up DigiUsher's Azure cost monitoring integration. The Terraform configuration supports all Azure billing types and automatically creates the required service principal, permissions, and FOCUS cost exports.
+This guide provides complete instructions for setting up DigiUsher's Azure cost monitoring integration. The Terraform configuration supports all Azure billing types and automatically grants DigiUsher access to your cost data.
 
 ## Overview
 
-Our solution creates a single Azure AD application with a service principal that provides:
+This setup grants DigiUsher's service principal access to your Azure resources. **No secrets are created or shared** - DigiUsher authenticates with its own credentials and accesses resources through role assignments you control.
 
-- **Reader access** across target subscriptions
-- **FOCUS cost exports** at the appropriate billing scope
-- **Reservations & Savings Plans** visibility (requires elevated access)
-- **Optional VM power management** capabilities (start/stop)
+### What This Does
+
+- Grants **Reader access** across target subscriptions
+- Creates **FOCUS cost exports** at the appropriate billing scope
+- Grants **Reservations & Savings Plans** visibility (recommended)
+- Optionally enables **VM power management** capabilities
 
 ### What Gets Created
 
-1. **Azure AD Application** and Service Principal
+1. **Service Principal** - DigiUsher's app registered in your tenant
 2. **Role Assignments:**
    - Reader (subscription level)
-   - Cost Management Contributor (EA billing scope) or Billing Account Contributor (MCA billing scope)
-   - Reservations Reader (tenant level) - requires temporary elevated access
-   - Savings Plan Reader (tenant level) - requires temporary elevated access
-   - Optional: Power Scheduler (VM start/stop)
+   - Cost Management Contributor (EA) or Billing Account Contributor (MCA)
+   - Reservations Reader (tenant level) - recommended
+   - Savings Plan Reader (tenant level) - recommended
+   - Power Scheduler (VM start/stop) - optional
 3. **Storage Account** for cost exports
 4. **FOCUS Cost Export** with daily schedule
 
 ### Benefits
 
+- **No secrets to manage** - DigiUsher uses its own credentials
+- **You control access** - Remove the service principal to revoke access
 - **Supports all Azure billing types** (EA, MCA, MPA)
-- **Multi-tenant ready** with proper scope isolation
-- **Simplifies credential management** - one service principal for all subscriptions
-- **Automatically discovers** accessible subscriptions
 - **FOCUS-compliant exports** - standard format across clouds
 - **Secure by default** - minimal required permissions
 
@@ -77,13 +78,11 @@ Run this to determine configuration:
 python3 check_billing_type.py
 ```
 
-You'll have one of these scenarios:
-
 | Scenario | Setup | Config Level |
 |----------|-------|--------------|
 | **1** | EA - no enrollment account | `billing_account` |
 | **2** | EA - has enrollment account | `enrollment_account` |
-| **3** | MCA | `invoice_section` |
+| **3** | MCA | `billing_account` or `invoice_section` |
 | **4** | MOSP/Pay-as-you-go only | Not supported |
 
 ---
@@ -96,16 +95,16 @@ You'll have one of these scenarios:
 
 ```hcl
 # Subscription and tenant
-subscription_id = "sub-12345"
-tenant_id       = "tenant-67890"
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
 
 # EA configuration
 billing_scope_level = "billing_account"
-billing_account_id  = "123456"       # EA enrollment number
+billing_account_id  = "123456"  # EA enrollment number
 
 # Storage
-storage_account_name   = ""          # Leave empty for auto-generated name
-storage_container_name = "focus-exports"
+storage_account_name   = ""     # Leave empty for auto-generated name
+storage_container_name = "digiusher-focus-exports"
 
 enable_cost_exports = true
 ```
@@ -125,57 +124,60 @@ az billing account list --query "[?agreementType=='EnterpriseAgreement'].{Name:d
 
 ```hcl
 # Subscription and tenant
-subscription_id = "sub-12345"
-tenant_id       = "tenant-67890"
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
 
 # EA configuration
 billing_scope_level    = "enrollment_account"
-billing_account_id     = "123456"    # EA enrollment number
-enrollment_account_id  = "67890"     # Specific enrollment account
+billing_account_id     = "123456"  # EA enrollment number
+enrollment_account_id  = "67890"   # Specific enrollment account
 
 # Storage
 storage_account_name   = ""
-storage_container_name = "focus-exports"
+storage_container_name = "digiusher-focus-exports"
 
 enable_cost_exports = true
 ```
 
 **Export scope:** Contains only subscriptions in this enrollment account.
 
-**How to find enrollment_account_id:**
+**How to find IDs:**
 ```bash
 # First get billing_account_id (enrollment number)
 az billing account list --query "[?agreementType=='EnterpriseAgreement'].{Name:displayName, ID:name}"
 
 # Then list enrollment accounts
-az billing account enrollment-account list --account-name "123456"
+az billing enrollment-account list
 ```
 
 ---
 
-### Scenario 3: MCA Invoice Section
+### Scenario 3: MCA
 
-**When to use:** Microsoft Customer Agreement (like DigiUsher's own account)
+**When to use:** Microsoft Customer Agreement (not EA)
 
 ```hcl
 # Subscription and tenant
-subscription_id = "9b0d9bab-a3e5-4ea1-9607-4dbf244206b9"
-tenant_id       = "f55d3be9-ebb2-4375-9366-bac926f020ba"
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
 
 # MCA configuration
-billing_scope_level = "invoice_section"
-billing_account_id  = "da605be5-d7ac-56ab-895b-38988e5b8ddf:a04cc649-5078-4640-aa6b-c3001660c18e_2019-05-31"
-billing_profile_id  = "6LHK-5HLH-BG7-PGB"
-invoice_section_id  = "XPN2-IUAW-PJA-PGB"
+billing_scope_level = "billing_account"
+billing_account_id  = "da605be5-...:a04cc649-..._2019-05-31"
+
+# Or use invoice section for finer control:
+# billing_scope_level = "invoice_section"
+# billing_profile_id  = "XXXX-XXXX-XXX-XXX"
+# invoice_section_id  = "XXXX-XXXX-XXX-XXX"
 
 # Storage
-storage_account_name   = "digiushercostexport"
-storage_container_name = "terraform-exports"
+storage_account_name   = ""
+storage_container_name = "digiusher-focus-exports"
 
 enable_cost_exports = true
 ```
 
-**Export scope:** Contains only subscriptions in this invoice section.
+**Export scope:** Contains subscriptions in the billing account or invoice section, depending on configuration.
 
 **How to find IDs:**
 ```bash
@@ -193,11 +195,11 @@ az billing invoice section list --account-name "BILLING_ACCOUNT_ID" --profile-na
 
 ### Scenario 4: Pay-as-you-go (MOSP)
 
-**Status:** FOCUS exports not supported for pay-as-you-go subscriptions.
+**Status:** FOCUS exports are not supported for pay-as-you-go subscriptions.
 
 **Options:**
 1. Upgrade to EA or MCA
-2. Use alternative integration (ActualCost + AmortizedCost exports)
+2. Contact support@digiusher.com for alternative integration options
 
 ---
 
@@ -205,7 +207,7 @@ az billing invoice section list --account-name "BILLING_ACCOUNT_ID" --profile-na
 
 ### 1. Create terraform.tfvars
 
-Copy the appropriate example above into `terraform.tfvars`
+Copy the appropriate example above into `terraform.tfvars` and fill in your values.
 
 ### 2. Initialize Terraform
 
@@ -225,67 +227,36 @@ terraform plan
 terraform apply
 ```
 
-### 5. Save onboarding credentials
-
-```bash
-# Get all values needed for DigiUsher onboarding
-terraform output -json digiusher_onboarding
-
-# Or save to file
-terraform output -json digiusher_onboarding > digiusher_credentials.json
-```
-
-### 6. Backfill historical data (optional)
-
-The daily export starts immediately, but you may want historical data. Run the backfill script for each month needed:
-
-```bash
-# Check if an export is already running
-python3 backfill_historical_data.py --from-terraform --status
-
-# Export a single month
-python3 backfill_historical_data.py --from-terraform --month 2024-06
-```
-
-**Note:** Azure only allows one export at a time. The script checks for in-progress exports and warns you to wait.
-
-For multiple months:
-```bash
-for m in 2024-{01..06}; do
-  python3 backfill_historical_data.py --from-terraform --month $m
-  sleep 300  # Wait 5 minutes between exports
-done
-```
-
-### 7. Verify exports
-
-```bash
-# Uses service principal credentials from terraform output
-python3 verify_exports.py --from-terraform
-```
-
----
-
-## What Gets Created
-
-- Azure AD Application (Service Principal)
-- Reader role assignment on subscriptions
-- Reservations Reader and Savings Plan Reader roles
-- FOCUS export configuration
-- Storage account and container (if needed)
-- Billing scope role assignment (Cost Management Contributor for EA, Billing Account Contributor for MCA)
-
----
-
-## DigiUsher Configuration
-
-After deployment, provide DigiUsher with the onboarding values:
+### 5. Share onboarding information with DigiUsher
 
 ```bash
 terraform output -json digiusher_onboarding
 ```
 
-This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`, `storage_account_name`, `storage_container_name`, `export_root_path`
+This provides DigiUsher with:
+- `tenant_id` - Your Azure tenant
+- `storage_account_name` - Where exports are stored
+- `storage_container_name` - Container name
+- `export_root_path` - Path within container
+- `billing_scope` - Billing scope for backfills
+- `export_name` - Export name for backfills
+
+**Note:** No secrets are shared. DigiUsher authenticates with its own credentials.
+
+---
+
+## Revoking Access
+
+To revoke DigiUsher's access:
+
+1. Remove the service principal:
+   ```bash
+   terraform destroy
+   ```
+
+2. Or manually in Azure Portal:
+   - Go to **Microsoft Entra ID** → **Enterprise Applications**
+   - Find "DigiUsher" and delete it
 
 ---
 
@@ -294,20 +265,22 @@ This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`
 **How do I know which scenario applies?**
 - Run `check_billing_type.py`
 - Or ask: "Do you have Enterprise Agreement?" and "Is there a dedicated enrollment account?"
-- Ask us at support@digiusher.com
+- Contact support@digiusher.com
 
 **What if there's no enrollment account?**
 - Use Scenario 1 (billing_account level)
-- Export will contain all subscriptions
+- Export contains all subscriptions
 - Provide list of target subscription IDs to DigiUsher for filtering
-
-**Can I test locally?**
-- Only if you have EA or MCA
-- Pay-as-you-go subscriptions don't support FOCUS exports
 
 **What's the difference between Scenario 1 and 2?**
 - Scenario 1: Export contains ALL subscriptions, filter in app
-- Scenario 2: Export contains ONLY subscriptions in enrollment account, Azure enforces boundary
+- Scenario 2: Export contains ONLY subscriptions in enrollment account
+
+**How does DigiUsher access my data?**
+- DigiUsher has a multi-tenant Azure AD application
+- This terraform creates a service principal for that app in your tenant
+- You grant roles to that service principal
+- DigiUsher authenticates with its own credentials and uses the roles you granted
 
 ---
 
@@ -321,27 +294,23 @@ This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`
 - Check permissions: Need Billing Reader role
 - Or get IDs from Azure Portal: Cost Management + Billing
 
-**"Permission denied on storage account"**
-- Need Owner role during initial setup
-- After setup, Contributor role is maintained for triggering historical exports
+**"Permission denied on role assignment"**
+- Need Owner or User Access Administrator role
+- For tenant-level roles, enable elevated access (see above)
 
 ---
 
 ## Files Reference
 
 - `azure_configuration.tf` - Main Terraform configuration
-- `terraform.tfvars` - Your configuration (create from scenario examples)
+- `terraform.tfvars` - Your configuration (create from examples)
 - `check_billing_type.py` - Automatic billing type detection
-- `backfill_historical_data.py` - Trigger exports for historical months
-- `verify_exports.py` - Check export status and list available months
 
 ---
 
 ## Next Steps
 
-1. Identify scenario (1-4)
+1. Identify scenario (1-3) using `check_billing_type.py`
 2. Create `terraform.tfvars` from appropriate example
 3. Run `terraform apply`
-4. Save credentials
-5. Backfill historical data (optional)
-6. Configure DigiUsher with output values
+4. Share `digiusher_onboarding` output with DigiUsher
