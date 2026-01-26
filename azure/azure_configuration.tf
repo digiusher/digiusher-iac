@@ -133,17 +133,12 @@ variable "export_root_path" {
   default     = "focus"
 }
 
-variable "digiusher_app_id" {
-  type        = string
-  description = "DigiUsher's multi-tenant application ID"
-  default     = "2f41ee0a-d8c0-4e39-9001-dc0bcb698802"
-}
-
 # ============================================================================
 # DATA SOURCES
 # ============================================================================
 
 data "azurerm_client_config" "current" {}
+data "azuread_client_config" "current" {}
 data "azurerm_subscriptions" "available" {}
 
 # ============================================================================
@@ -218,14 +213,23 @@ check "billing_account_required" {
 }
 
 # ============================================================================
-# DIGIUSHER SERVICE PRINCIPAL
+# AZURE AD APPLICATION AND SERVICE PRINCIPAL
 # ============================================================================
-# This creates a service principal in the customer's tenant for DigiUsher's
-# multi-tenant app. No secrets are created - DigiUsher authenticates with
-# its own credentials and accesses resources via this service principal.
 
-resource "azuread_service_principal" "digiusher" {
-  client_id = var.digiusher_app_id
+resource "azuread_application" "digiusher_app" {
+  display_name = "DigiUsherApp"
+  owners       = [data.azuread_client_config.current.object_id]
+}
+
+resource "azuread_service_principal" "digiusher_app_sp" {
+  client_id                    = azuread_application.digiusher_app.client_id
+  app_role_assignment_required = false
+  owners                       = [data.azuread_client_config.current.object_id]
+}
+
+resource "azuread_application_password" "app_password" {
+  display_name   = "DigiUsherApp Secret"
+  application_id = azuread_application.digiusher_app.id
 }
 
 # ============================================================================
@@ -236,7 +240,7 @@ resource "azurerm_role_assignment" "app_role_assignment" {
   count                = length(local.subscriptions)
   scope                = "/subscriptions/${local.subscriptions[count.index]}"
   role_definition_name = "Reader"
-  principal_id         = azuread_service_principal.digiusher.object_id
+  principal_id         = azuread_service_principal.digiusher_app_sp.object_id
 }
 
 # ============================================================================
@@ -265,7 +269,7 @@ resource "azurerm_role_assignment" "digiusher_power_scheduler_role_assignment" {
   count              = var.enable_power_scheduler ? length(local.subscriptions) : 0
   scope              = "/subscriptions/${local.subscriptions[count.index]}"
   role_definition_id = azurerm_role_definition.digiusher_power_scheduler[0].role_definition_resource_id
-  principal_id       = azuread_service_principal.digiusher.object_id
+  principal_id       = azuread_service_principal.digiusher_app_sp.object_id
 }
 
 # ============================================================================
@@ -284,12 +288,12 @@ data "azurerm_role_definition" "savings_plan_reader" {
 
 resource "azapi_resource" "digiusher_reservations_reader" {
   count     = var.enable_reservations_access ? 1 : 0
-  name      = uuidv5("dns", "${azuread_service_principal.digiusher.object_id}-reservations-reader")
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-reservations-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.Capacity"
   body = {
     properties = {
-      principalId      = azuread_service_principal.digiusher.object_id
+      principalId      = azuread_service_principal.digiusher_app_sp.object_id
       roleDefinitionId = data.azurerm_role_definition.reservations_reader[0].id
       principalType    = "ServicePrincipal"
     }
@@ -302,12 +306,12 @@ resource "azapi_resource" "digiusher_reservations_reader" {
 
 resource "azapi_resource" "digiusher_savings_plan_reader" {
   count     = var.enable_reservations_access ? 1 : 0
-  name      = uuidv5("dns", "${azuread_service_principal.digiusher.object_id}-savings-plan-reader")
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-savings-plan-reader")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = "/providers/Microsoft.BillingBenefits"
   body = {
     properties = {
-      principalId      = azuread_service_principal.digiusher.object_id
+      principalId      = azuread_service_principal.digiusher_app_sp.object_id
       roleDefinitionId = data.azurerm_role_definition.savings_plan_reader[0].id
       principalType    = "ServicePrincipal"
     }
@@ -357,13 +361,13 @@ resource "azurerm_storage_container" "export_container" {
 # Cost Management Contributor at billing scope (for EA - required to trigger exports)
 resource "azapi_resource" "cost_management_contributor_assignment" {
   count     = var.enable_cost_exports && !local.is_mca ? 1 : 0
-  name      = uuidv5("dns", "${azuread_service_principal.digiusher.object_id}-cost-mgmt-contributor-${md5(local.billing_scope)}")
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-mgmt-contributor-${md5(local.billing_scope)}")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
   parent_id = local.billing_scope
 
   body = {
     properties = {
-      principalId      = azuread_service_principal.digiusher.object_id
+      principalId      = azuread_service_principal.digiusher_app_sp.object_id
       roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/434105ed-43f6-45c7-a02f-909b2ba83430"
       principalType    = "ServicePrincipal"
     }
@@ -384,7 +388,7 @@ resource "azapi_resource_action" "mca_billing_contributor" {
   method      = "POST"
 
   body = {
-    principalId       = azuread_service_principal.digiusher.object_id
+    principalId       = azuread_service_principal.digiusher_app_sp.object_id
     principalTenantId = var.tenant_id
     roleDefinitionId  = "/providers/Microsoft.Billing/billingAccounts/${var.billing_account_id}/billingRoleDefinitions/50000000-aaaa-bbbb-cccc-100000000001"
   }
@@ -395,7 +399,7 @@ resource "azurerm_role_assignment" "storage_blob_contributor" {
   count                = var.enable_cost_exports ? 1 : 0
   scope                = azurerm_storage_account.export_storage[0].id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azuread_service_principal.digiusher.object_id
+  principal_id         = azuread_service_principal.digiusher_app_sp.object_id
 }
 
 # Create FOCUS export
@@ -479,14 +483,20 @@ output "billing_scope_type" {
   value       = var.enable_cost_exports ? local.billing_scope_type : null
 }
 
+output "backfill_command" {
+  description = "Command to run historical data backfill (run once per month)"
+  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --tenant-id ${var.tenant_id} --client-id ${azuread_application.digiusher_app.client_id} --billing-scope '${local.billing_scope}' --export-name ${azapi_resource.focus_export[0].name} --month YYYY-MM" : null
+}
+
 output "digiusher_onboarding" {
-  description = "Values needed for DigiUsher onboarding - share these with DigiUsher"
+  description = "Values needed for DigiUsher onboarding"
   value = {
     tenant_id              = var.tenant_id
+    application_id         = azuread_application.digiusher_app.client_id
+    client_secret          = azuread_application_password.app_password.value
     storage_account_name   = var.enable_cost_exports ? azurerm_storage_account.export_storage[0].name : null
     storage_container_name = var.enable_cost_exports ? var.storage_container_name : null
     export_root_path       = var.enable_cost_exports ? var.export_root_path : null
-    billing_scope          = var.enable_cost_exports ? local.billing_scope : null
-    export_name            = var.enable_cost_exports ? azapi_resource.focus_export[0].name : null
   }
+  sensitive = true
 }
