@@ -15,7 +15,7 @@ Our solution creates a single Azure AD application with a service principal that
 
 1. **Azure AD Application** and Service Principal
 2. **Role Assignments:**
-   - Reader (subscription level)
+   - Reader (management group level) - covers all current and future subscriptions
    - Cost Management Contributor (EA billing scope) or Billing Account Contributor (MCA billing scope)
    - Reservations Reader (tenant level) - requires temporary elevated access
    - Savings Plan Reader (tenant level) - requires temporary elevated access
@@ -40,9 +40,14 @@ Our solution creates a single Azure AD application with a service principal that
 
 ---
 
-## Elevated Access for Reservations & Savings Plans
+## Elevated Access Required
 
-The Reservations Reader and Savings Plan Reader roles are assigned at the **tenant level** (on `/providers/Microsoft.Capacity` and `/providers/Microsoft.BillingBenefits`). By default, even tenant administrators cannot assign roles at these scopes.
+Several role assignments require elevated access:
+- **Reader** at root management group (covers all current and future subscriptions)
+- **Reservations Reader** at tenant level
+- **Savings Plan Reader** at tenant level
+
+By default, even tenant administrators cannot assign roles at these scopes.
 
 ### Option 1: Temporarily Enable Elevated Access (Recommended)
 

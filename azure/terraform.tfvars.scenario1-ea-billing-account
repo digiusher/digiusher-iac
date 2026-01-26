@@ -27,6 +27,6 @@ enable_reservations_access = true
 # Optional: VM power scheduler
 enable_power_scheduler = false
 
-# Optional: Target specific subscriptions for Reader role
-# Leave empty to target all subscriptions
+# Target specific subscriptions for Reader role
+# Leave empty (recommended) to assign Reader at management group level, covering all current and future subscriptions
 target_subscription_ids = []

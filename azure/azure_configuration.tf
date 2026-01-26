@@ -40,7 +40,7 @@ variable "tenant_id" {
 
 variable "target_subscription_ids" {
   type        = list(string)
-  description = "List of specific subscription IDs to target. If empty, all subscriptions will be used."
+  description = "List of specific subscription IDs for Reader role. If empty (recommended), Reader is assigned at tenant root management group, covering all current and future subscriptions."
   default     = []
 }
 
@@ -233,12 +233,21 @@ resource "azuread_application_password" "app_password" {
 }
 
 # ============================================================================
-# SUBSCRIPTION-LEVEL ROLE ASSIGNMENTS
+# READER ROLE ASSIGNMENT
 # ============================================================================
 
-resource "azurerm_role_assignment" "app_role_assignment" {
-  count                = length(local.subscriptions)
-  scope                = "/subscriptions/${local.subscriptions[count.index]}"
+# Management group level (recommended) - covers all current and future subscriptions
+resource "azurerm_role_assignment" "reader_management_group" {
+  count                = length(var.target_subscription_ids) == 0 ? 1 : 0
+  scope                = "/providers/Microsoft.Management/managementGroups/${var.tenant_id}"
+  role_definition_name = "Reader"
+  principal_id         = azuread_service_principal.digiusher_app_sp.object_id
+}
+
+# Subscription level - only when specific subscriptions are targeted
+resource "azurerm_role_assignment" "reader_subscription" {
+  count                = length(var.target_subscription_ids) > 0 ? length(var.target_subscription_ids) : 0
+  scope                = "/subscriptions/${var.target_subscription_ids[count.index]}"
   role_definition_name = "Reader"
   principal_id         = azuread_service_principal.digiusher_app_sp.object_id
 }
