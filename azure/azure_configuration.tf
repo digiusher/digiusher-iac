@@ -124,7 +124,7 @@ variable "export_recurrence" {
 variable "export_file_format" {
   type        = string
   description = "Export file format: Csv or Parquet"
-  default     = "Csv"
+  default     = "Parquet"
 }
 
 variable "export_root_path" {
