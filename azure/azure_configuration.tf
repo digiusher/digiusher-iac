@@ -403,11 +403,11 @@ resource "azapi_resource_action" "mca_billing_contributor" {
   }
 }
 
-# Storage Blob Data Contributor for the export
-resource "azurerm_role_assignment" "storage_blob_contributor" {
+# Storage Blob Data Reader for reading exports (Azure Cost Management writes using its own managed identity)
+resource "azurerm_role_assignment" "storage_blob_reader" {
   count                = var.enable_cost_exports ? 1 : 0
   scope                = azurerm_storage_account.export_storage[0].id
-  role_definition_name = "Storage Blob Data Contributor"
+  role_definition_name = "Storage Blob Data Reader"
   principal_id         = azuread_service_principal.digiusher_app_sp.object_id
 }
 
@@ -453,7 +453,7 @@ resource "azapi_resource" "focus_export" {
       }
       partitionData         = true
       dataOverwriteBehavior = "OverwritePreviousReport"
-      compressionMode       = "gzip"
+      compressionMode       = var.export_file_format == "Csv" ? "Gzip" : "Snappy"
       exportDescription     = "DigiUsher FOCUS cost export"
     }
   }
@@ -461,7 +461,7 @@ resource "azapi_resource" "focus_export" {
   depends_on = [
     azurerm_resource_provider_registration.cost_management_exports,
     azurerm_storage_container.export_container,
-    azurerm_role_assignment.storage_blob_contributor,
+    azurerm_role_assignment.storage_blob_reader,
     azapi_resource.cost_management_contributor_assignment,
     azapi_resource_action.mca_billing_contributor
   ]
@@ -494,7 +494,7 @@ output "billing_scope_type" {
 
 output "backfill_command" {
   description = "Command to run historical data backfill (run once per month)"
-  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --tenant-id ${var.tenant_id} --client-id ${azuread_application.digiusher_app.client_id} --billing-scope '${local.billing_scope}' --export-name ${azapi_resource.focus_export[0].name} --month YYYY-MM" : null
+  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --from-terraform --month YYYY-MM" : null
 }
 
 output "digiusher_onboarding" {
