@@ -1,0 +1,38 @@
+# Scenario 3: MCA Invoice Section
+#
+# Use this when:
+# - Microsoft Customer Agreement (not EA)
+# - Small to medium deployments with direct billing access
+# - Export contains ONLY subscriptions in invoice section
+
+# Subscription and tenant
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
+
+# MCA configuration
+billing_account_id  = "REPLACE_WITH_BILLING_ACCOUNT_ID"
+
+# Choose between billing account or invoice section
+billing_scope_level = "billing_account"
+# If using invoice section, set both billing_profile_id and invoice_section_id
+#billing_scope_level = "invoice_section"
+#billing_profile_id  = "REPLACE_WITH_BILLING_PROFILE_ID"
+#invoice_section_id  = "REPLACE_WITH_INVOICE_SECTION_ID"
+
+# Storage (leave empty for auto-generated name)
+storage_account_name   = ""
+storage_container_name = "digiusher-focus-exports"
+
+# Enable FOCUS exports
+enable_cost_exports = true
+
+# Recommended: Reservations & Savings Plans visibility
+# Requires temporarily enabling elevated access - see README
+enable_reservations_access = true
+
+# Optional: VM power scheduler
+enable_power_scheduler = false
+
+# Target specific subscriptions for Reader role
+# Leave empty (recommended) to assign Reader at management group level, covering all current and future subscriptions
+target_subscription_ids = []
