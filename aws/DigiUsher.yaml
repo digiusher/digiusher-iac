@@ -29,7 +29,9 @@ Metadata:
           default: "Additional Permissions (Optional)"
         Parameters:
           - IncludeEC2StartStopPermissions
-          - IncludeS3DuplicateObjectsPermission
+          - IncludeCommitmentPurchasePermissions
+          - IncludeTagManagementPermissions
+          - IncludeAutomationPermissions
 
 Mappings:
   DataExports:
@@ -105,9 +107,25 @@ Parameters:
       - "no"
     Default: "no"
 
-  IncludeS3DuplicateObjectsPermission:
+  IncludeCommitmentPurchasePermissions:
     Type: String
-    Description: Include S3 ListBucket permission for duplicate object detection
+    Description: Include permissions to purchase Reserved Instances and Savings Plans
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  IncludeTagManagementPermissions:
+    Type: String
+    Description: Include permissions to manage tags across AWS resources
+    AllowedValues:
+      - "yes"
+      - "no"
+    Default: "no"
+
+  IncludeAutomationPermissions:
+    Type: String
+    Description: Include permissions for SSM runbook management and automation execution
     AllowedValues:
       - "yes"
       - "no"
@@ -152,7 +170,9 @@ Conditions:
 
   # Additional permissions conditions
   IncludeEC2StartStopPermissionsCondition: !Equals [!Ref IncludeEC2StartStopPermissions, "yes"]
-  IncludeS3DuplicateObjectsPermissionCondition: !Equals [!Ref IncludeS3DuplicateObjectsPermission, "yes"]
+  IncludeCommitmentPurchasePermissionsCondition: !Equals [!Ref IncludeCommitmentPurchasePermissions, "yes"]
+  IncludeTagManagementPermissionsCondition: !Equals [!Ref IncludeTagManagementPermissions, "yes"]
+  IncludeAutomationPermissionsCondition: !Equals [!Ref IncludeAutomationPermissions, "yes"]
 
   # Region validation
   IsUSEast1: !Equals [!Ref 'AWS::Region', 'us-east-1']
@@ -355,35 +375,173 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
-              - Sid: DigiUsherRecommendationsPermissions
+              - Sid: DigiUsherCostAndBillingPermissions
                 Effect: Allow
                 Action:
-                  - application-autoscaling:Describe*
-                  - autoscaling:Describe*
-                  - aws-marketplace:ListEntities
-                  - budgets:ViewBudget
                   - ce:Describe*
                   - ce:Get*
+                  - cur:Describe*
+                  - cur:Get*
+                  - budgets:ViewBudget
+                  - invoicing:*
+                  - savingsplans:DescribeSavingsPlans
+                  - savingsplans:DescribeSavingsPlansOfferings
+                  - savingsplans:DescribeSavingsPlansOfferingRates
+                  - pricing:GetProducts
+                Resource: "*"
+              - Sid: DigiUsherComputePermissions
+                Effect: Allow
+                Action:
+                  - ec2:Describe*
+                  - autoscaling:Describe*
+                  - application-autoscaling:Describe*
+                  - lambda:GetFunction
+                  - lambda:GetFunctionConfiguration
+                  - lambda:GetPolicy
+                  - lambda:GetProvisionedConcurrencyConfig
+                  - lambda:List*
+                  - ecs:Describe*
+                  - ecs:List*
+                  - eks:Describe*
+                  - eks:List*
+                  - elasticloadbalancing:Describe*
+                  - compute-optimizer:Get*
+                  - compute-optimizer:UpdateEnrollmentStatus
+                Resource: "*"
+              - Sid: DigiUsherDatabasePermissions
+                Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:DescribeDBClusters
+                  - rds:DescribeReservedDBInstances
+                  - rds:DescribeReservedDBInstancesOfferings
+                  - rds:ListTagsForResource
+                  - dynamodb:Describe*
+                  - dynamodb:List*
+                  - elasticache:Describe*
+                  - elasticache:List*
+                  - es:Describe*
+                  - es:List*
+                  - redshift:Describe*
+                  - redshift:List*
+                  - docdb:Describe*
+                  - docdb:List*
+                  - neptune:Describe*
+                  - neptune:List*
+                  - cassandra:Select
+                  - cassandra:Describe
+                  - timestream:DescribeEndpoints
+                  - timestream:DescribeDatabase
+                  - timestream:DescribeTable
+                  - timestream:ListDatabases
+                  - timestream:ListTables
+                  - dms:Describe*
+                  - dms:List*
+                Resource: "*"
+              - Sid: DigiUsherStoragePermissions
+                Effect: Allow
+                Action:
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:GetBucketPolicyStatus
+                  - s3:GetBucketPublicAccessBlock
+                  - s3:GetBucketTagging
+                  - s3:GetLifecycleConfiguration
+                  - s3:GetIntelligentTieringConfiguration
+                  - s3:ListAllMyBuckets
+                  - elasticfilesystem:Describe*
+                  - fsx:Describe*
+                  - glacier:Describe*
+                  - glacier:List*
+                  - ecr:Describe*
+                  - ecr:List*
+                  - ecr:GetLifecyclePolicy
+                  - backup:Describe*
+                  - backup:List*
+                  - backup:GetBackupPlan
+                Resource: "*"
+              - Sid: DigiUsherNetworkingAndCDNPermissions
+                Effect: Allow
+                Action:
                   - cloudfront:GetDistributionConfig
                   - cloudfront:ListDistributions
+                  - route53:List*
+                  - route53:GetHostedZone
+                  - apigateway:GET
+                Resource: "*"
+              - Sid: DigiUsherDataAndAnalyticsPermissions
+                Effect: Allow
+                Action:
+                  - glue:Get*
+                  - glue:List*
+                  - elasticmapreduce:Describe*
+                  - elasticmapreduce:List*
+                  - states:Describe*
+                  - states:List*
+                  - athena:List*
+                  - athena:GetWorkGroup
+                  - kinesis:Describe*
+                  - kinesis:List*
+                  - kafka:Describe*
+                  - kafka:List*
+                  - quicksight:List*
+                  - quicksight:DescribeDashboard
+                  - quicksight:DescribeAccountSubscription
+                  - sagemaker:List*
+                  - sagemaker:DescribeEndpoint
+                  - sagemaker:DescribeNotebookInstance
+                Resource: "*"
+              - Sid: DigiUsherMessagingPermissions
+                Effect: Allow
+                Action:
+                  - sqs:List*
+                  - sqs:GetQueueAttributes
+                  - sns:List*
+                  - sns:GetTopicAttributes
+                  - ses:GetSendQuota
+                  - ses:ListIdentities
+                  - mq:Describe*
+                  - mq:List*
+                  - events:Describe*
+                  - events:List*
+                Resource: "*"
+              - Sid: DigiUsherMonitoringAndLoggingPermissions
+                Effect: Allow
+                Action:
                   - cloudwatch:Get*
                   - cloudwatch:Link
                   - cloudwatch:List*
-                  - compute-optimizer:Get*
-                  - compute-optimizer:UpdateEnrollmentStatus
-                  - cur:Describe*
-                  - cur:Get*
-                  - dynamodb:Describe*
-                  - dynamodb:List*
-                  - ec2:Describe*
-                  - ecs:Describe*
-                  - ecs:List*
-                  - elasticache:Describe*
+                  - cloudtrail:Describe*
+                  - cloudtrail:GetTrailStatus
+                  - cloudtrail:List*
+                  - logs:DescribeLogGroups
+                  - logs:GetLogGroupFields
+                  - xray:BatchGetTraces
+                  - xray:GetTraceSummaries
+                Resource: "*"
+              - Sid: DigiUsherSecurityAndCompliancePermissions
+                Effect: Allow
+                Action:
                   - iam:GetAccessKeyLastUsed
                   - iam:GetLoginProfile
                   - iam:ListAccessKeys
                   - iam:ListUsers
-                  - invoicing:*
+                  - kms:List*
+                  - kms:DescribeKey
+                  - secretsmanager:List*
+                  - secretsmanager:DescribeSecret
+                  - guardduty:List*
+                  - guardduty:GetDetector
+                  - securityhub:Get*
+                  - securityhub:List*
+                  - wafv2:List*
+                  - wafv2:GetWebACL
+                  - config:Describe*
+                  - config:GetDiscoveredResourceCounts
+                Resource: "*"
+              - Sid: DigiUsherOrganizationsAndTaggingPermissions
+                Effect: Allow
+                Action:
                   - organizations:DescribeAccount
                   - organizations:DescribeOrganization
                   - organizations:DescribeOrganizationalUnit
@@ -394,37 +552,31 @@ Resources:
                   - organizations:ListParents
                   - organizations:ListRoots
                   - organizations:ListTagsForResource
-                  - rds:DescribeDBInstances
-                  - rds:PurchaseReservedDbInstancesOffering
-                  - resourcegroups:GetGroup
-                  - resourcegroups:ListGroups
-                  - s3:GetBucketAcl
-                  - s3:GetBucketLocation
-                  - s3:GetBucketPolicyStatus
-                  - s3:GetBucketPublicAccessBlock
-                  - s3:GetBucketTagging
-                  - s3:ListAllMyBuckets
-                  - savingsplans:CreateSavingsPlan
-                  - savingsplans:DescribeSavingsPlans
-                  - savingsplans:DescribeSavingsPlansOfferings
-                  - servicequotas:Get*
-                  - servicequotas:List*
-                  - ssm:CreateChangeRequest
-                  - ssm:DeleteChangeRequest
-                  - ssm:ListChangeRequests
-                  - ssm:UpdateChangeRequest
-                  - sustainability:GetCarbonFootprintSummary
                   - tag:GetResources
                   - tag:GetTagKeys
                   - tag:GetTagValues
-                  - tag:TagResources
-                  - tag:UntagResources
+                  - resourcegroups:GetGroup
+                  - resourcegroups:ListGroups
+                  - servicequotas:Get*
+                  - servicequotas:List*
+                Resource: "*"
+              - Sid: DigiUsherSustainabilityPermissions
+                Effect: Allow
+                Action:
+                  - sustainability:GetCarbonFootprintSummary
+                Resource: "*"
+              - Sid: DigiUsherTrustedAdvisorPermissions
+                Effect: Allow
+                Action:
                   - trustedadvisor:Describe*
                   - trustedadvisor:GenerateReport
                   - trustedadvisor:Get*
                   - trustedadvisor:List*
-                  - xray:BatchGetTraces
-                  - xray:GetTraceSummaries
+                Resource: "*"
+              - Sid: DigiUsherMarketplacePermissions
+                Effect: Allow
+                Action:
+                  - aws-marketplace:ListEntities
                 Resource: "*"
         - !If
           - NeedsBucketAccess
@@ -455,15 +607,124 @@ Resources:
                   Resource: "*"
           - !Ref AWS::NoValue
         - !If
-          - IncludeS3DuplicateObjectsPermissionCondition
-          - PolicyName: DigiUsherS3DuplicateObjectsPolicy
+          - IncludeCommitmentPurchasePermissionsCondition
+          - PolicyName: DigiUsherCommitmentPurchasePolicy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
-                - Sid: S3DuplicateObjectsPermission
+                - Sid: DigiUsherCommitmentPurchasePermissions
                   Effect: Allow
                   Action:
-                    - s3:ListBucket
+                    - savingsplans:CreateSavingsPlan
+                    - savingsplans:DeleteQueuedSavingsPlan
+                    - savingsplans:ReturnSavingsPlan
+                    - ec2:PurchaseReservedInstancesOffering
+                    - ec2:ModifyReservedInstances
+                    - rds:PurchaseReservedDBInstancesOffering
+                    - dynamodb:PurchaseReservedCapacityOfferings
+                    - elasticache:PurchaseReservedCacheNodesOffering
+                    - redshift:PurchaseReservedNodeOffering
+                    - es:PurchaseReservedInstanceOffering
+                  Resource: "*"
+          - !Ref AWS::NoValue
+        - !If
+          - IncludeTagManagementPermissionsCondition
+          - PolicyName: DigiUsherTagManagementPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: DigiUsherTagManagementPermissions
+                  Effect: Allow
+                  Action:
+                    - tag:TagResources
+                    - tag:UntagResources
+                    - ec2:CreateTags
+                    - ec2:DeleteTags
+                    - rds:AddTagsToResource
+                    - rds:RemoveTagsFromResource
+                    - s3:PutBucketTagging
+                    - s3:DeleteBucketTagging
+                    - lambda:TagResource
+                    - lambda:UntagResource
+                    - eks:TagResource
+                    - eks:UntagResource
+                    - ecs:TagResource
+                    - ecs:UntagResource
+                    - elasticloadbalancing:AddTags
+                    - elasticloadbalancing:RemoveTags
+                    - elasticache:AddTagsToResource
+                    - elasticache:RemoveTagsFromResource
+                    - es:AddTags
+                    - es:RemoveTags
+                    - redshift:CreateTags
+                    - redshift:DeleteTags
+                    - dynamodb:TagResource
+                    - dynamodb:UntagResource
+                    - elasticfilesystem:TagResource
+                    - elasticfilesystem:UntagResource
+                    - glue:TagResource
+                    - glue:UntagResource
+                    - states:TagResource
+                    - states:UntagResource
+                    - sqs:TagQueue
+                    - sqs:UntagQueue
+                    - sns:TagResource
+                    - sns:UntagResource
+                    - secretsmanager:TagResource
+                    - secretsmanager:UntagResource
+                    - kms:TagResource
+                    - kms:UntagResource
+                    - backup:TagResource
+                    - backup:UntagResource
+                    - ecr:TagResource
+                    - ecr:UntagResource
+                    - fsx:TagResource
+                    - fsx:UntagResource
+                    - docdb:AddTagsToResource
+                    - docdb:RemoveTagsFromResource
+                    - neptune:AddTagsToResource
+                    - neptune:RemoveTagsFromResource
+                    - dms:AddTagsToResource
+                    - dms:RemoveTagsFromResource
+                    - timestream:TagResource
+                    - timestream:UntagResource
+                  Resource: "*"
+          - !Ref AWS::NoValue
+        - !If
+          - IncludeAutomationPermissionsCondition
+          - PolicyName: DigiUsherAutomationPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Sid: DigiUsherRunbookManagement
+                  Effect: Allow
+                  Action:
+                    - ssm:CreateDocument
+                    - ssm:UpdateDocument
+                    - ssm:UpdateDocumentDefaultVersion
+                    - ssm:DeleteDocument
+                    - ssm:GetDocument
+                    - ssm:DescribeDocument
+                    - ssm:ListDocumentVersions
+                  Resource: !Sub "arn:aws:ssm:*:${AWS::AccountId}:document/DigiUsher-*"
+                - Sid: DigiUsherRunbookStart
+                  Effect: Allow
+                  Action:
+                    - ssm:StartAutomationExecution
+                  Resource: !Sub "arn:aws:ssm:*:${AWS::AccountId}:automation-definition/DigiUsher-*:*"
+                - Sid: DigiUsherRunbookExecution
+                  Effect: Allow
+                  Action:
+                    - ssm:StopAutomationExecution
+                    - ssm:GetAutomationExecution
+                    - ssm:DescribeAutomationExecutions
+                    - ssm:DescribeAutomationStepExecutions
+                    - ssm:SendAutomationSignal
+                  Resource: "*"
+                - Sid: DigiUsherRunbookDiscovery
+                  Effect: Allow
+                  Action:
+                    - ssm:ListDocuments
                   Resource: "*"
           - !Ref AWS::NoValue
       Tags:
