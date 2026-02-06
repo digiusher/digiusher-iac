@@ -159,18 +159,22 @@ Conditions:
 
 Rules:
   ValidateBucketNameForRootAccount:
-    RuleCondition: !Condition NeedsBucketAccess
+    RuleCondition: !And
+      - !Equals [!Ref AccountType, "Root"]
+      - !Not [!Equals [!Ref DeploymentScenario, "LinkedAccount"]]
     Assertions:
       - Assert: !Not [!Equals [!Ref BucketName, ""]]
         AssertDescription: "BucketName is required when AccountType is Root and deployment scenario requires bucket access"
 
   ValidateUSEast1ForBilling:
-    RuleCondition: !Or
-      - !Condition CreateBucket
-      - !Condition CreateDataExport
-      - !Condition EnableCarbonFootprintReport
+    RuleCondition: !And
+      - !Equals [!Ref AccountType, "Root"]
+      - !Or
+        - !Equals [!Ref DeploymentScenario, "NewBucketNewExport"]
+        - !Equals [!Ref DeploymentScenario, "ExistingBucketNewExport"]
+        - !Equals [!Ref EnableCarbonFootprint, "yes"]
     Assertions:
-      - Assert: !Condition IsUSEast1
+      - Assert: !Equals [!Ref 'AWS::Region', 'us-east-1']
         AssertDescription: "This template must be deployed in us-east-1 region for billing-related resources (CUR, Carbon Footprint)"
 
 Resources:
@@ -239,8 +243,8 @@ Resources:
   DigiUsherCUR1:
     Type: AWS::CUR::ReportDefinition
     Condition: IsCUR1
-    DependsOn:
-      - !If [CreateBucket, !Ref DigiusherS3BucketPolicy, !Ref AWS::NoValue]
+    Metadata:
+      BucketPolicyDependency: !If [CreateBucket, !Ref DigiusherS3BucketPolicy, !Ref AWS::NoValue]
     Description: |
       Defines a Cost and Usage Report 1.0 to capture detailed usage and cost data.
     Properties:
@@ -256,15 +260,14 @@ Resources:
       S3Region: !Ref AWS::Region
       RefreshClosedReports: true
       ReportVersioning: OVERWRITE_REPORT
-      AdditionalArtifacts:
-        - ATHENA
+      AdditionalArtifacts: []
 
   # CUR 2.0 Data Export
   DigiUsherCUR2:
     Type: AWS::BCMDataExports::Export
     Condition: IsCUR2
-    DependsOn:
-      - !If [CreateBucket, !Ref DigiusherS3BucketPolicy, !Ref AWS::NoValue]
+    Metadata:
+      BucketPolicyDependency: !If [CreateBucket, !Ref DigiusherS3BucketPolicy, !Ref AWS::NoValue]
     Description: |
       Defines a Cost and Usage Report 2.0 (CUR) to capture detailed usage and cost data.
     Properties:
@@ -299,8 +302,8 @@ Resources:
   DigiUsherCarbonFootprint:
     Type: AWS::BCMDataExports::Export
     Condition: EnableCarbonFootprintReport
-    DependsOn:
-      - !If [CreateBucket, !Ref DigiusherS3BucketPolicy, !Ref AWS::NoValue]
+    Metadata:
+      BucketPolicyDependency: !If [CreateBucket, !Ref DigiusherS3BucketPolicy, !Ref AWS::NoValue]
     Description: |
       Creates a Carbon Footprint Report export to track environmental impact.
     Properties:
