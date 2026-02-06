@@ -388,8 +388,12 @@ Resources:
                   - cur:Describe*
                   - cur:Get*
                   - budgets:ViewBudget
-                  - invoicing:*
                   - savingsplans:DescribeSavingsPlans
+                  - invoicing:GetInvoicePDF
+                  - invoicing:GetInvoiceUnit
+                  - invoicing:GetInvoiceSummary
+                  - invoicing:ListInvoiceSummaries
+                  - invoicing:BatchGetInvoiceProfile
                   - savingsplans:DescribeSavingsPlansOfferings
                   - savingsplans:DescribeSavingsPlansOfferingRates
                   - pricing:GetProducts
