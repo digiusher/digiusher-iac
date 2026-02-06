@@ -281,9 +281,9 @@ The template implements the **ExternalId** condition in the IAM role trust polic
 The IAM role grants the following permissions:
 
 **Read-Only Permissions** (always included):
-- Cost Explorer, Billing, and Cost & Usage Reports
+- Cost Explorer, Billing, Cost & Usage Reports, and BCM Data Exports
 - Compute: EC2, ECS, EKS, Lambda, Auto Scaling, ELB, Compute Optimizer
-- Databases: RDS, DynamoDB, ElastiCache, Redshift, DocumentDB, Neptune, Timestream, DMS
+- Databases: RDS, DynamoDB, ElastiCache, MemoryDB, Redshift, DocumentDB, Neptune, Timestream, DMS
 - Storage: S3 metadata, EFS, FSx, Glacier, ECR, Backup
 - Networking: CloudFront, Route53, API Gateway
 - Data & Analytics: Glue, EMR, Step Functions, Athena, Kinesis, MSK, QuickSight, SageMaker
