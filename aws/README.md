@@ -1,8 +1,8 @@
-# DigiUsher Consolidated CloudFormation Template
+# DigiUsher CloudFormation Template
 
 ## Overview
 
-The **DigiUsherConsolidated.yaml** template provides a single, comprehensive CloudFormation solution for all DigiUsher AWS integration scenarios. This replaces the previous multiple separate templates with one flexible, parameter-driven template.
+The **DigiUsher.yaml** template provides a single, comprehensive CloudFormation solution for all DigiUsher AWS integration scenarios. This replaces the previous multiple separate templates with one flexible, parameter-driven template.
 
 ## Table of Contents
 
@@ -62,7 +62,7 @@ The **DigiUsherConsolidated.yaml** template provides a single, comprehensive Clo
 # Replace EXTERNAL_ID_FROM_DIGIUSHER with the ExternalId provided by DigiUsher
 aws cloudformation create-stack \
   --stack-name digiusher-integration \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --region us-east-1 \
   --parameters \
@@ -81,7 +81,7 @@ aws cloudformation create-stack \
 # Replace EXTERNAL_ID_FROM_DIGIUSHER with the ExternalId provided by DigiUsher
 aws cloudformation create-stack \
   --stack-name digiusher-linked \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --region us-east-1 \
   --parameters \
@@ -99,7 +99,7 @@ For AWS Organizations with multiple linked accounts, use StackSets to deploy to 
 # Step 1: Create the StackSet (run from Organization management account)
 aws cloudformation create-stack-set \
   --stack-set-name digiusher-linked-accounts \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
     ParameterKey=AccountType,ParameterValue=Linked \
@@ -320,7 +320,7 @@ EXTERNAL_ID="PASTE_EXTERNAL_ID_FROM_DIGIUSHER_HERE"
 # Deploy stack
 aws cloudformation create-stack \
   --stack-name digiusher-root-cur2 \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --region us-east-1 \
   --parameters \
@@ -352,7 +352,7 @@ aws cloudformation describe-stacks \
 # Get the ExternalId from DigiUsher before running this
 aws cloudformation create-stack \
   --stack-name digiusher-root-existing \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --region us-east-1 \
   --parameters \
@@ -368,7 +368,7 @@ aws cloudformation create-stack \
 
 **Before starting**: Get the ExternalId from DigiUsher (log into DigiUsher → AWS Connection Settings)
 
-1. **Download the template**: Save `DigiUsherConsolidated.yaml` to your computer
+1. **Download the template**: Save `DigiUsher.yaml` to your computer
 
 2. **Open CloudFormation Console**:
    - Go to https://console.aws.amazon.com/cloudformation
@@ -377,7 +377,7 @@ aws cloudformation create-stack \
 3. **Create Stack**:
    - Click "Create stack" → "With new resources (standard)"
    - Choose "Upload a template file"
-   - Click "Choose file" and select `DigiUsherConsolidated.yaml`
+   - Click "Choose file" and select `DigiUsher.yaml`
    - Click "Next"
 
 4. **Specify Stack Details**:
@@ -421,7 +421,7 @@ EXTERNAL_ID="PASTE_EXTERNAL_ID_FROM_DIGIUSHER_HERE"
 # Step 1: Create the StackSet (run from Organization management account)
 aws cloudformation create-stack-set \
   --stack-set-name digiusher-linked-accounts \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
     ParameterKey=AccountType,ParameterValue=Linked \
@@ -471,7 +471,7 @@ aws cloudformation list-stack-set-operations \
 # Create StackSet with self-managed permissions
 aws cloudformation create-stack-set \
   --stack-set-name digiusher-linked-accounts \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --capabilities CAPABILITY_NAMED_IAM \
   --parameters \
     ParameterKey=AccountType,ParameterValue=Linked \
@@ -630,7 +630,7 @@ ParameterKey=BucketName,ParameterValue=acme-corp-digiusher-cur-a3f8e2
 **Validate template syntax**:
 ```bash
 aws cloudformation validate-template \
-  --template-body file://DigiUsherConsolidated.yaml \
+  --template-body file://DigiUsher.yaml \
   --region us-east-1
 ```
 
