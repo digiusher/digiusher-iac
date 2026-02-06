@@ -387,6 +387,8 @@ Resources:
                   - ce:Get*
                   - cur:Describe*
                   - cur:Get*
+                  - bcm-data-exports:ListExports
+                  - bcm-data-exports:GetExport
                   - budgets:ViewBudget
                   - savingsplans:DescribeSavingsPlans
                   - invoicing:GetInvoicePDF
