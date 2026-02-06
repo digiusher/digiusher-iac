@@ -220,6 +220,11 @@ Resources:
           - Id: DeleteOldVersions
             Status: Enabled
             NoncurrentVersionExpirationInDays: 90
+          - Id: TransitionToIntelligentTiering
+            Status: Enabled
+            Transitions:
+              - StorageClass: INTELLIGENT_TIERING
+                TransitionInDays: 180
       Tags:
         - Key: ManagedBy
           Value: DigiUsher
