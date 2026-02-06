@@ -446,6 +446,8 @@ Resources:
                   - timestream:ListTables
                   - dms:Describe*
                   - dms:List*
+                  - memorydb:Describe*
+                  - memorydb:List*
                 Resource: "*"
               - Sid: DigiUsherStoragePermissions
                 Effect: Allow
@@ -634,6 +636,7 @@ Resources:
                     - elasticache:PurchaseReservedCacheNodesOffering
                     - redshift:PurchaseReservedNodeOffering
                     - es:PurchaseReservedInstanceOffering
+                    - memorydb:PurchaseReservedNodesOffering
                   Resource: "*"
           - !Ref AWS::NoValue
         - !If
