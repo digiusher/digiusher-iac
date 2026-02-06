@@ -229,7 +229,9 @@ ExternalId: <your-secure-id>
 | **CURVersion** | No | String | `CUR2` | CUR version: `CUR1` or `CUR2` |
 | **EnableCarbonFootprint** | No | String | `no` | Enable Carbon Footprint export: `yes` or `no` |
 | **IncludeEC2StartStopPermissions** | No | String | `no` | Include EC2 start/stop permissions: `yes` or `no` |
-| **IncludeS3DuplicateObjectsPermission** | No | String | `no` | Include S3 ListBucket permission: `yes` or `no` |
+| **IncludeCommitmentPurchasePermissions** | No | String | `no` | Include RI/Savings Plans purchase permissions: `yes` or `no` |
+| **IncludeTagManagementPermissions** | No | String | `no` | Include tag management permissions across services: `yes` or `no` |
+| **IncludeAutomationPermissions** | No | String | `no` | Include SSM runbook and automation permissions: `yes` or `no` |
 
 ### Parameter Validation
 
@@ -279,24 +281,26 @@ The template implements the **ExternalId** condition in the IAM role trust polic
 The IAM role grants the following permissions:
 
 **Read-Only Permissions** (always included):
-- Cost Explorer and Cost & Usage Reports
-- AWS service metadata (EC2, RDS, ECS, DynamoDB, ElastiCache, etc.)
-- CloudWatch metrics
-- Trusted Advisor and Compute Optimizer recommendations
-- Organization structure and account information
-- Invoicing data
-- Sustainability/Carbon footprint data
-- S3 bucket metadata
-- Resource tags
+- Cost Explorer, Billing, and Cost & Usage Reports
+- Compute: EC2, ECS, EKS, Lambda, Auto Scaling, ELB, Compute Optimizer
+- Databases: RDS, DynamoDB, ElastiCache, Redshift, DocumentDB, Neptune, Timestream, DMS
+- Storage: S3 metadata, EFS, FSx, Glacier, ECR, Backup
+- Networking: CloudFront, Route53, API Gateway
+- Data & Analytics: Glue, EMR, Step Functions, Athena, Kinesis, MSK, QuickSight, SageMaker
+- Messaging: SQS, SNS, SES, MQ, EventBridge
+- Monitoring: CloudWatch, CloudTrail, CloudWatch Logs, X-Ray
+- Security: IAM (read-only), KMS, Secrets Manager, GuardDuty, Security Hub, WAF, Config
+- Organizations, resource tags, service quotas, Trusted Advisor
+- Sustainability/Carbon footprint, Marketplace, Pricing
 
 **Conditional Read-Only Permissions**:
 - S3 bucket access (only for the CUR bucket, when applicable)
-- S3 ListBucket (when `IncludeS3DuplicateObjectsPermission=yes`)
 
-**Optional Write Permissions**:
-- EC2 start/stop instances (when `IncludeEC2StartStopPermissions=yes`)
-- Savings Plans and Reserved Instance purchases (for implementing cost recommendations)
-- Compute Optimizer enrollment
+**Optional Permissions** (disabled by default):
+- EC2 start/stop instances (`IncludeEC2StartStopPermissions=yes`)
+- RI and Savings Plans purchases (`IncludeCommitmentPurchasePermissions=yes`)
+- Tag management across services (`IncludeTagManagementPermissions=yes`)
+- SSM runbook management and automation (`IncludeAutomationPermissions=yes`)
 
 ### S3 Bucket Security
 
