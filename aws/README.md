@@ -308,7 +308,7 @@ When the template creates an S3 bucket, it includes:
 
 - ✅ **Public Access Block**: All public access is blocked
 - ✅ **Versioning**: Enabled for data protection
-- ✅ **Lifecycle Policy**: Automatically deletes old versions after 90 days
+- ✅ **Lifecycle Policy**: Deletes old versions after 90 days, transitions to Intelligent-Tiering after 180 days
 - ✅ **Bucket Policy**: Restricts access to AWS billing services only
 - ✅ **Encryption**: Uses AWS-managed encryption (default)
 
