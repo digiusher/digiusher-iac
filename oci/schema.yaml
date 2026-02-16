@@ -1,0 +1,67 @@
+title: "DigiUsher OCI Onboarding"
+description: "Sets up read-only access for the DigiUsher FinOps platform to analyze your OCI cost data, resource inventory, and metrics."
+schemaVersion: 1.1.0
+version: "1.0"
+locale: "en"
+
+variableGroups:
+  - title: "Hidden"
+    visible: false
+    variables:
+      - tenancy_ocid
+      - region
+
+  - title: "Service Account"
+    variables:
+      - user_name
+      - group_name
+
+  - title: "Optional Features"
+    variables:
+      - enable_resource_discovery
+      - enable_metrics_access
+
+variables:
+  tenancy_ocid:
+    type: string
+    title: "Tenancy OCID"
+    description: "Auto-populated by OCI Resource Manager."
+    required: true
+
+  region:
+    type: oci:identity:region:name
+    title: "Home Region"
+    description: "Auto-populated by OCI Resource Manager."
+    required: true
+
+  user_name:
+    type: string
+    title: "Service User Name"
+    description: "Name of the IAM user created for DigiUsher."
+    default: "digiusher-service-user"
+    required: true
+
+  group_name:
+    type: string
+    title: "Group Name"
+    description: "Name of the IAM group created for DigiUsher."
+    default: "digiusher-finops-group"
+    required: true
+
+  enable_resource_discovery:
+    type: boolean
+    title: "Enable Resource Discovery"
+    description: "Grant DigiUsher read access to all resources for inventory and optimization recommendations."
+    default: true
+
+  enable_metrics_access:
+    type: boolean
+    title: "Enable Metrics Access"
+    description: "Grant DigiUsher read access to monitoring metrics (CPU, network, disk) for optimization."
+    default: true
+
+outputGroups:
+  - title: "DigiUsher Onboarding"
+    outputs:
+      - digiusher_onboarding
+      - next_steps
