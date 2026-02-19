@@ -24,21 +24,36 @@ resource "oci_identity_user_group_membership" "digiusher" {
 }
 
 # -----------------------------------------------------------------------------
-# Policy: Cost and Usage Reports (FOCUS)
+# Policy: Cost Report Cross-Tenancy Access
 #
 # OCI stores cost reports in an Oracle-owned Object Storage bucket.
 # The 'endorse' statement grants cross-tenancy read access to that bucket.
 # The usage-report tenancy OCID is the same for all OCI customers.
+#
+# define/endorse statements must be in a separate policy from Allow statements.
+# -----------------------------------------------------------------------------
+
+resource "oci_identity_policy" "digiusher_cost_report_endorse" {
+  compartment_id = var.tenancy_ocid
+  name           = "digiusher-cost-report-endorse"
+  description    = "Cross-tenancy access to Oracle's cost report Object Storage bucket"
+
+  statements = [
+    "define tenancy usage-report as ocid1.tenancy.oc1..aaaaaaaaned4fkpkisbwjlr56u7cj63lf3wffbilvqknstgtvzub7vhqkggq",
+    "endorse group ${var.group_name} to read objects in tenancy usage-report",
+  ]
+}
+
+# -----------------------------------------------------------------------------
+# Policy: Cost and Usage Data
 # -----------------------------------------------------------------------------
 
 resource "oci_identity_policy" "digiusher_cost_reports" {
   compartment_id = var.tenancy_ocid
   name           = "digiusher-cost-report-access"
-  description    = "Allow DigiUsher to read cost and usage reports (FOCUS format)"
+  description    = "Allow DigiUsher to read cost and usage reports and budgets"
 
   statements = [
-    "define tenancy usage-report as ocid1.tenancy.oc1..aaaaaaaaned4fkpkisbwjlr56u7cj63lf3wffbilvqknstgtvzub7vhqkggq",
-    "endorse group ${var.group_name} to read objects in tenancy usage-report",
     "Allow group ${var.group_name} to read usage-report in tenancy",
     "Allow group ${var.group_name} to read usage-budgets in tenancy",
   ]
