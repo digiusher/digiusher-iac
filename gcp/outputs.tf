@@ -1,8 +1,8 @@
 ###############################################################################
 # Outputs
 #
-# These values are needed to configure your DigiUsher account.
-# Run: terraform output -json > digiusher_credentials.json
+# Values needed to configure your DigiUsher account.
+# Extract key: terraform output -raw service_account_key | base64 -d > digiusher-key.json
 ###############################################################################
 
 output "service_account_email" {

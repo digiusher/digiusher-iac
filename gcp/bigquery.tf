@@ -16,6 +16,13 @@ resource "google_bigquery_dataset" "billing_export" {
   dataset_id = var.billing_export_dataset_id
   location   = var.bigquery_location
 
+  lifecycle {
+    precondition {
+      condition     = contains(["US", "EU"], var.bigquery_location)
+      error_message = "BigQuery location must be US or EU (multi-region) for billing export backfill."
+    }
+  }
+
   friendly_name = "DigiUsher Billing Export"
   description   = "BigQuery dataset for GCP billing export data. Managed by DigiUsher onboarding Terraform."
 
@@ -23,7 +30,7 @@ resource "google_bigquery_dataset" "billing_export" {
     managed_by = "digiusher"
   }
 
-  depends_on = [google_project_service.bigquery]
+  depends_on = [google_project_service.digiusher]
 }
 
 # Grant read access to the billing export dataset

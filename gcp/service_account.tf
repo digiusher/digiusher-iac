@@ -12,7 +12,7 @@ resource "google_service_account" "digiusher" {
   display_name = "DigiUsher FinOps Platform"
   description  = "Read-only service account for DigiUsher cloud cost management. See https://github.com/digiusher/digiusher-iac"
 
-  depends_on = [google_project_service.iam]
+  depends_on = [google_project_service.digiusher]
 }
 
 resource "google_service_account_key" "digiusher" {

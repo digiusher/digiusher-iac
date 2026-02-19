@@ -319,7 +319,7 @@ The service account key is a sensitive credential. Handle it like a password:
 - Do not commit it to version control
 - Transfer it to DigiUsher through their secure onboarding portal
 - The key does not expire by default - rotate it periodically if your security policy requires it
-- To rotate: `terraform taint google_service_account_key.digiusher && terraform apply`
+- To rotate: `terraform apply -replace="google_service_account_key.digiusher"`
 
 ### Revoking Access
 

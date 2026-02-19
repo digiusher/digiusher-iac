@@ -15,11 +15,8 @@ provider "google" {
 }
 
 locals {
-  # Scope: org-wide vs limited to specific projects
-  scope_org_wide = length(var.target_project_ids) == 0
-
-  # All project IDs that need project-level roles (always includes the billing export project)
-  target_projects = local.scope_org_wide ? [] : var.target_project_ids
+  scope_org_wide  = length(var.target_project_ids) == 0
+  target_projects = var.target_project_ids
 
   sa_email  = google_service_account.digiusher.email
   sa_member = "serviceAccount:${local.sa_email}"
