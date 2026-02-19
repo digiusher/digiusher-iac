@@ -29,28 +29,20 @@ Our solution creates a GCP service account with read-only access that provides:
 3. **BigQuery Dataset** for billing export (optional - can use existing)
 4. **API Enablement** for required GCP services
 
-### Key Differences from AWS/Azure
-
-| Aspect | AWS | Azure | GCP |
-|--------|-----|-------|-----|
-| Auth | IAM Role + ExternalId | Service Principal + Secret | Service Account + Key |
-| Billing data | CUR to S3 (automated) | FOCUS export to Storage (automated) | BigQuery export (**manual step**) |
-| IaC tool | CloudFormation | Terraform | Terraform |
-
-> **Important:** Unlike AWS and Azure, GCP billing export to BigQuery cannot be automated via Terraform or API. After running Terraform, you must [enable billing export manually](#step-2-enable-billing-export) in the GCP Console. See [GCP_BILLING_EXPORT_GUIDE.md](GCP_BILLING_EXPORT_GUIDE.md) for detailed instructions.
+> **Important:** GCP billing export to BigQuery cannot be automated via Terraform or API. After running Terraform, you must [enable billing export manually](#step-2-enable-billing-export) in the GCP Console. See [GCP_BILLING_EXPORT_GUIDE.md](GCP_BILLING_EXPORT_GUIDE.md) for detailed instructions.
 
 ## GCP Hierarchy Primer
 
-If you are new to GCP's resource hierarchy, here is how it maps to AWS and Azure:
+GCP's resource hierarchy:
 
-| GCP Concept | AWS Equivalent | Azure Equivalent | How to Find |
-|-------------|---------------|-----------------|-------------|
-| **Organization** | AWS Organization | Azure Tenant | `gcloud organizations list` or Console: IAM & Admin > Settings |
-| **Folder** | Organizational Unit (OU) | Management Group | `gcloud resource-manager folders list --organization=ORG_ID` |
-| **Project** | AWS Account | Subscription | `gcloud projects list` |
-| **Billing Account** | Payer Account | Billing Account | `gcloud billing accounts list` |
+| Concept | Description | How to Find |
+|---------|-------------|-------------|
+| **Organization** | Top-level container for all your GCP resources | `gcloud organizations list` or Console: IAM & Admin > Settings |
+| **Folder** | Optional grouping of projects (e.g., by team or environment) | `gcloud resource-manager folders list --organization=ORG_ID` |
+| **Project** | Where resources live (VMs, databases, etc.) | `gcloud projects list` |
+| **Billing Account** | Payment entity linked to projects | `gcloud billing accounts list` |
 
-**Key difference:** In GCP, the Billing Account is a **separate entity** from the Organization. A single billing account can fund projects across multiple organizations, and one organization can have projects linked to different billing accounts.
+**Key point:** The Billing Account is a **separate entity** from the Organization. A single billing account can fund projects across multiple organizations, and one organization can have projects linked to different billing accounts. This is why DigiUsher needs permissions at both the organization level (for resource visibility) and the billing account level (for cost data).
 
 **Organization:** Your GCP Organization exists automatically if you have Google Workspace or Cloud Identity. It is the top-level container for all your folders and projects. When DigiUsher is granted access at the organization level, it covers all current and future projects.
 

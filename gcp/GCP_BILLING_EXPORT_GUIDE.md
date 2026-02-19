@@ -4,7 +4,7 @@ This guide walks you through enabling BigQuery billing export in the GCP Console
 
 ## Why This Step Is Required
 
-GCP billing data is accessed through BigQuery. Unlike AWS (where CloudFormation creates CUR exports automatically) and Azure (where Terraform creates FOCUS exports), GCP requires manual configuration of billing export in the Console. This is a GCP platform limitation - there is no API or Terraform resource for this.
+GCP billing data is accessed through BigQuery. The billing export configuration must be done manually in the GCP Console - there is no API or Terraform resource for this step.
 
 ## Prerequisites
 
@@ -125,4 +125,4 @@ BigQuery dataset location is **immutable** - it cannot be changed after creation
 
 Google provides a native FOCUS (FinOps Open Cost and Usage Specification) BigQuery view that maps billing data into the standardized FOCUS schema. This requires both **Detailed usage cost** and **Pricing** exports to be enabled - which is why we require both above.
 
-DigiUsher uses this to normalize your GCP costs alongside AWS and Azure data in a consistent format.
+DigiUsher uses this to normalize your GCP costs into a consistent format across all your cloud providers.
