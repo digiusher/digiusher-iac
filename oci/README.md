@@ -57,12 +57,14 @@ terraform init
 # Review what will be created
 terraform plan \
   -var="tenancy_ocid=ocid1.tenancy.oc1..your-tenancy-ocid" \
-  -var="region=us-ashburn-1"
+  -var="region=us-ashburn-1" \
+  -var="user_email=digiusher-svc@yourcompany.com"
 
 # Deploy
 terraform apply \
   -var="tenancy_ocid=ocid1.tenancy.oc1..your-tenancy-ocid" \
-  -var="region=us-ashburn-1"
+  -var="region=us-ashburn-1" \
+  -var="user_email=digiusher-svc@yourcompany.com"
 ```
 
 > **Note**: When running Terraform locally, you must be authenticated to OCI. See [OCI Terraform Provider Authentication](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/terraformproviderconfiguration.htm) for options.
@@ -154,6 +156,7 @@ Allow group digiusher-finops-group to read metrics in tenancy
 |----------|----------|---------|-------------|
 | `tenancy_ocid` | Yes | - | Your OCI tenancy OCID (auto-populated in ORM) |
 | `region` | Yes | - | OCI home region (auto-populated in ORM) |
+| `user_email` | Yes | - | Email for the service user (e.g. `digiusher-svc@yourcompany.com`) |
 | `user_name` | No | `digiusher-service-user` | IAM user name |
 | `group_name` | No | `digiusher-finops-group` | IAM group name |
 | `enable_resource_discovery` | No | `true` | Resource inventory access |
@@ -177,7 +180,8 @@ To remove all DigiUsher resources from your tenancy:
 ```bash
 terraform destroy \
   -var="tenancy_ocid=ocid1.tenancy.oc1..your-tenancy-ocid" \
-  -var="region=us-ashburn-1"
+  -var="region=us-ashburn-1" \
+  -var="user_email=digiusher-svc@yourcompany.com"
 ```
 
 > **Note**: You should also delete the API key from the user before destroying, or the destroy will handle it as part of user deletion.

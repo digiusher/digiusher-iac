@@ -13,6 +13,7 @@ variableGroups:
 
   - title: "Service Account"
     variables:
+      - user_email
       - user_name
       - group_name
 
@@ -32,6 +33,12 @@ variables:
     type: oci:identity:region:name
     title: "Home Region"
     description: "Auto-populated by OCI Resource Manager."
+    required: true
+
+  user_email:
+    type: string
+    title: "Service User Email"
+    description: "Email address for the service user. OCI requires an email for user creation (e.g. digiusher-svc@yourcompany.com)."
     required: true
 
   user_name:
