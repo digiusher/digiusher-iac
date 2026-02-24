@@ -19,6 +19,7 @@ Our solution creates a GCP service account with read-only access that provides:
    - Billing Viewer (billing account level) - cost data, pricing, budgets
    - BigQuery Data Viewer (dataset level) - read billing export tables
    - BigQuery Job User (project level) - run queries
+   - BigQuery Read Session User (project level) - Storage Read API for efficient data reads
    - Cloud Asset Viewer (org level) - resource inventory
    - Recommender Viewer (org level) - optimization recommendations
    - Compute Viewer (org level) - CUDs and reservations
@@ -198,6 +199,7 @@ All permissions are **read-only**. DigiUsher cannot create, modify, or delete an
 | Role | Why We Need It |
 |------|---------------|
 | `roles/bigquery.jobUser` | Execute BigQuery queries against the billing export dataset. |
+| `roles/bigquery.readSessionUser` | Use BigQuery Storage Read API for efficient parallel data reads. |
 | `roles/serviceusage.serviceUsageConsumer` | Required for making Cloud Asset API calls from this project. |
 
 ### BigQuery Dataset Level

@@ -11,6 +11,13 @@ resource "google_project_iam_member" "bigquery_job_user" {
   member  = local.sa_member
 }
 
+# Required for BigQuery Storage Read API (parallel streaming reads used by Polars/pandas)
+resource "google_project_iam_member" "bigquery_read_session_user" {
+  project = var.project_id
+  role    = "roles/bigquery.readSessionUser"
+  member  = local.sa_member
+}
+
 # Required for Cloud Asset API calls
 resource "google_project_iam_member" "service_usage_consumer" {
   count   = var.enable_resource_inventory ? 1 : 0
