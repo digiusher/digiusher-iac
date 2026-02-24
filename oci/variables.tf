@@ -8,6 +8,11 @@ variable "region" {
   description = "OCI home region identifier (e.g. us-ashburn-1). IAM resources are created in the home region."
 }
 
+variable "user_email" {
+  type        = string
+  description = "Email address for the DigiUsher service user. OCI requires an email for user creation. Can be any valid email (e.g. digiusher-svc@yourcompany.com)."
+}
+
 variable "user_name" {
   type        = string
   description = "Name of the IAM user to create for DigiUsher."

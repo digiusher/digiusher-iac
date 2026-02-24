@@ -16,6 +16,7 @@ resource "oci_identity_user" "digiusher" {
   compartment_id = var.tenancy_ocid
   name           = var.user_name
   description    = "Service user for DigiUsher FinOps platform"
+  email          = var.user_email
 }
 
 resource "oci_identity_user_group_membership" "digiusher" {
