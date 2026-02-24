@@ -439,8 +439,6 @@ Resources:
                   - docdb:List*
                   - neptune:Describe*
                   - neptune:List*
-                  - cassandra:Select
-                  - cassandra:Describe
                   - timestream:DescribeEndpoints
                   - timestream:DescribeDatabase
                   - timestream:DescribeTable
@@ -485,12 +483,19 @@ Resources:
               - Sid: DigiUsherDataAndAnalyticsPermissions
                 Effect: Allow
                 Action:
-                  - glue:Get*
-                  - glue:List*
-                  - elasticmapreduce:Describe*
-                  - elasticmapreduce:List*
-                  - states:Describe*
-                  - states:List*
+                  - glue:GetJobs
+                  - glue:GetCrawlers
+                  - glue:GetDatabases
+                  - glue:ListJobs
+                  - glue:ListCrawlers
+                  - elasticmapreduce:DescribeCluster
+                  - elasticmapreduce:DescribeInstanceGroups
+                  - elasticmapreduce:ListClusters
+                  - elasticmapreduce:ListInstances
+                  - elasticmapreduce:ListInstanceGroups
+                  - states:DescribeStateMachine
+                  - states:ListStateMachines
+                  - states:ListExecutions
                   - athena:List*
                   - athena:GetWorkGroup
                   - kinesis:Describe*
@@ -522,15 +527,11 @@ Resources:
                 Effect: Allow
                 Action:
                   - cloudwatch:Get*
-                  - cloudwatch:Link
                   - cloudwatch:List*
                   - cloudtrail:Describe*
                   - cloudtrail:GetTrailStatus
                   - cloudtrail:List*
                   - logs:DescribeLogGroups
-                  - logs:GetLogGroupFields
-                  - xray:BatchGetTraces
-                  - xray:GetTraceSummaries
                 Resource: "*"
               - Sid: DigiUsherSecurityAndCompliancePermissions
                 Effect: Allow
@@ -545,8 +546,8 @@ Resources:
                   - secretsmanager:DescribeSecret
                   - guardduty:List*
                   - guardduty:GetDetector
-                  - securityhub:Get*
-                  - securityhub:List*
+                  - securityhub:GetEnabledStandards
+                  - securityhub:DescribeHub
                   - wafv2:List*
                   - wafv2:GetWebACL
                   - config:Describe*
@@ -582,7 +583,6 @@ Resources:
                 Effect: Allow
                 Action:
                   - trustedadvisor:Describe*
-                  - trustedadvisor:GenerateReport
                   - trustedadvisor:Get*
                   - trustedadvisor:List*
                 Resource: "*"
