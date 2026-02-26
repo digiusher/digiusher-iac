@@ -101,6 +101,32 @@ cp terraform.tfvars.existing-export.example terraform.tfvars
 terraform init && terraform plan && terraform apply
 ```
 
+<details>
+<summary><b>Multiple Billing Accounts</b></summary>
+
+Organizations with multiple billing accounts (cost centers, resellers, M&A) can connect them all to the same service account and BigQuery dataset.
+
+**First billing account:**
+```bash
+terraform apply \
+  -var="billing_account_id=ABCDEF-123456-ABCDEF" \
+  -var="billing_export_dataset_id=all_billing_data"
+```
+
+**Additional billing accounts:**
+```bash
+terraform apply \
+  -var="billing_account_id=GHIJKL-789012-GHIJKL" \
+  -var="billing_export_dataset_id=all_billing_data" \
+  -var="create_bigquery_dataset=false"
+```
+
+Each billing account creates a separate table: `gcp_billing_export_resource_v1_<BILLING_ACCOUNT_ID>`. DigiUsher reads all tables automatically. Remember to [enable billing export](#step-2-enable-billing-export) for each billing account in the GCP Console.
+
+</details>
+
+---
+
 ### Step 2: Enable Billing Export
 
 > **This step cannot be automated.** You must do it manually in the GCP Console.
