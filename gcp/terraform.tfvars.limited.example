@@ -1,0 +1,28 @@
+###############################################################################
+# Scenario 2: Limited / POC Onboarding
+#
+# Grants DigiUsher access to specific projects only. Use this for:
+#   - Proof of concept with a subset of projects
+#   - Customers who want to start small before expanding org-wide
+#   - Teams that manage only certain projects
+#
+# To later expand to full org access:
+#   1. Remove the target_project_ids line (or set to [])
+#   2. Run: terraform apply
+###############################################################################
+
+# Required - Replace with your values
+project_id         = "my-billing-project"
+organization_id    = "123456789012"
+billing_account_id = "ABCDEF-123456-ABCDEF"
+
+# Limit access to these specific projects
+target_project_ids = [
+  "my-production-project",
+  "my-staging-project",
+]
+
+# Use existing billing export dataset (if you already have one)
+create_bigquery_dataset   = false
+billing_export_dataset_id = "my_existing_billing_dataset"
+bigquery_location         = "US"

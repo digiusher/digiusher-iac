@@ -1,0 +1,31 @@
+###############################################################################
+# Scenario 1: Full Organization Onboarding (Recommended)
+#
+# Grants DigiUsher read-only access across your entire GCP organization.
+# New projects created in the future are automatically covered.
+#
+# Prerequisites:
+#   - You need Organization Administrator access (for org-level IAM)
+#   - You need Billing Account Administrator access (for billing viewer role)
+#   - Terraform must be authenticated: gcloud auth application-default login
+#
+# Find your IDs:
+#   Organization ID:    gcloud organizations list
+#   Billing Account ID: gcloud billing accounts list
+#   Project ID:         gcloud projects list
+###############################################################################
+
+# Required - Replace with your values
+project_id         = "my-billing-project"     # Project for service account and BigQuery dataset
+organization_id    = "123456789012"            # From: gcloud organizations list
+billing_account_id = "ABCDEF-123456-ABCDEF"   # From: gcloud billing accounts list
+
+# BigQuery dataset for billing export (created by Terraform)
+create_bigquery_dataset   = true
+billing_export_dataset_id = "digiusher_billing_export"
+bigquery_location         = "US"   # US or EU multi-region (required for data backfill)
+
+# Feature flags (all enabled by default for full visibility)
+enable_resource_inventory = true   # Cloud Asset API - list all resources
+enable_recommendations    = true   # Recommender API - optimization recommendations
+enable_monitoring         = true   # Cloud Monitoring - CPU, memory, network metrics

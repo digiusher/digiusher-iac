@@ -1,0 +1,29 @@
+### Terraform
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Ignore .tfvars files (may contain sensitive values like org IDs and billing account IDs)
+*.tfvars
+!*.tfvars.example
+
+# Ignore override files as they are usually used to override resources locally and so
+# are not checked in
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Plan files
+*tfplan*
+
+# Service account keys and credentials
+*-key.json
+*_credentials.json
+
