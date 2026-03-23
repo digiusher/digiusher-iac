@@ -16,7 +16,7 @@ locals {
       "roles/resourcemanager.tagViewer",
     ]),
     var.enable_resource_inventory ? toset(["roles/cloudasset.viewer"]) : [],
-    var.enable_recommendations ? toset(["roles/recommender.viewer", "roles/compute.viewer", "roles/cloudsql.viewer"]) : [],
+    var.enable_recommendations ? toset(["roles/recommender.viewer", "roles/compute.viewer", "roles/cloudsql.viewer", "roles/bigquery.resourceViewer"]) : [],
     var.enable_monitoring ? toset(["roles/monitoring.viewer"]) : [],
   )
 
