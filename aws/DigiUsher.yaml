@@ -314,6 +314,7 @@ Resources:
               INCLUDE_RESOURCES: "TRUE"
               INCLUDE_MANUAL_DISCOUNT_COMPATIBILITY: "FALSE"
               INCLUDE_SPLIT_COST_ALLOCATION_DATA: "TRUE"
+              INCLUDE_CAPACITY_RESERVATION_DATA: "TRUE"
         RefreshCadence:
           Frequency: "SYNCHRONOUS"
         DestinationConfigurations:
