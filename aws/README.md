@@ -222,12 +222,13 @@ ExternalId: <your-secure-id>
 |-----------|----------|------|---------|-------------|
 | **AccountType** | Yes | String | `Root` | Account type: `Root` or `Linked` |
 | **DeploymentScenario** | Yes | String | `NewBucketNewExport` | Deployment scenario (see scenarios above) |
-| **RoleName** | Yes | String | - | Name for the IAM role DigiUsher will assume |
-| **ExternalId** | Yes | String (NoEcho) | - | Secure external ID for role assumption (2-1224 chars) |
+| **RoleName** | No | String | `DigiUsher-ReadAccess` | Name for the IAM role DigiUsher will assume |
+| **ExternalId** | Yes | String (NoEcho) | - | UUID provided by DigiUsher for secure role assumption |
 | **BucketName** | Conditional | String | `""` | S3 bucket name (required for root account scenarios with bucket access) |
 | **DataExportName** | No | String | `DigiUsher_CUR_Export` | Name for the CUR export |
 | **CURVersion** | No | String | `CUR2` | CUR version: `CUR1` or `CUR2` |
 | **EnableCarbonFootprint** | No | String | `no` | Enable Carbon Footprint export: `yes` or `no` |
+| **CarbonFootprintExportName** | No | String | `DigiUsher_Carbon_Export` | Name for the Carbon Footprint data export |
 | **IncludeEC2StartStopPermissions** | No | String | `no` | Include EC2 start/stop permissions: `yes` or `no` |
 | **IncludeCommitmentPurchasePermissions** | No | String | `no` | Include RI/Savings Plans purchase permissions: `yes` or `no` |
 | **IncludeTagManagementPermissions** | No | String | `no` | Include tag management permissions across services: `yes` or `no` |

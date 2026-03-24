@@ -25,6 +25,7 @@ Metadata:
           - DataExportName
           - CURVersion
           - EnableCarbonFootprint
+          - CarbonFootprintExportName
       - Label:
           default: "Additional Permissions (Optional)"
         Parameters:
@@ -61,13 +62,14 @@ Parameters:
   RoleName:
     Type: String
     Description: Name for the IAM Role that DigiUsher will assume
+    Default: DigiUsher-ReadAccess
     MinLength: 1
     MaxLength: 64
     ConstraintDescription: Role name must be between 1 and 64 characters
 
   ExternalId:
     Type: String
-    Description: External ID for secure role assumption (prevents confused deputy problem)
+    Description: "Unique external ID provided by DigiUsher for secure role assumption (UUID format). Contact DigiUsher to obtain your External ID."
     MinLength: 2
     MaxLength: 1224
     NoEcho: true
@@ -98,6 +100,11 @@ Parameters:
       - "yes"
       - "no"
     Default: "no"
+
+  CarbonFootprintExportName:
+    Type: String
+    Description: Name for the Carbon Footprint data export (only used when EnableCarbonFootprint is yes)
+    Default: "DigiUsher_Carbon_Export"
 
   IncludeEC2StartStopPermissions:
     Type: String
@@ -334,7 +341,7 @@ Resources:
     Properties:
       Export:
         Description: "Carbon Footprint export for DigiUsher"
-        Name: !Sub "${DataExportName}_CarbonFootprint"
+        Name: !Ref CarbonFootprintExportName
         DataQuery:
           QueryStatement: "SELECT last_refresh_timestamp, location, model_version, payer_account_id, product_code, region_code, total_lbm_emissions_unit, total_lbm_emissions_value, total_mbm_emissions_unit, total_mbm_emissions_value, total_scope_1_emissions_unit, total_scope_1_emissions_value, total_scope_2_lbm_emissions_unit, total_scope_2_lbm_emissions_value, total_scope_2_mbm_emissions_unit, total_scope_2_mbm_emissions_value, total_scope_3_lbm_emissions_unit, total_scope_3_lbm_emissions_value, total_scope_3_mbm_emissions_unit, total_scope_3_mbm_emissions_value, usage_account_id, usage_period_end, usage_period_start FROM CARBON_EMISSIONS"
           TableConfigurations: {}
@@ -780,7 +787,7 @@ Outputs:
   CarbonFootprintEnabled:
     Condition: EnableCarbonFootprintReport
     Description: Carbon Footprint Report export name
-    Value: !Sub "${DataExportName}_CarbonFootprint"
+    Value: !Ref CarbonFootprintExportName
 
   S3Prefix:
     Condition: CreateDataExport
