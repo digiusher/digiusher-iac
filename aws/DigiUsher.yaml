@@ -547,6 +547,10 @@ Resources:
                   - iam:GetLoginProfile
                   - iam:ListAccessKeys
                   - iam:ListUsers
+                  - sso:List*
+                  - sso:Describe*
+                  - identitystore:List*
+                  - identitystore:Describe*
                   - kms:List*
                   - kms:DescribeKey
                   - secretsmanager:List*
