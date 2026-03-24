@@ -825,9 +825,7 @@ Outputs:
       Account Type: ${AccountType}
       Deployment Scenario: ${DeploymentScenario}
 
-      Share the following information with DigiUsher:
+      Share the following with DigiUsher:
       - Role ARN: ${DigiusherIAMRole.Arn}
       - External ID: (Keep this secure - you provided it during deployment)
-      ${!If [NeedsBucketAccess, !Sub '- Bucket Name: ${!If [CreateBucket, !Ref DigiusherS3Bucket, !Ref BucketName]}', '']}
-      ${!If [CreateDataExport, !Sub '- Data Export Name: ${DataExportName}', '']}
-      ${!If [CreateDataExport, !Sub '- CUR Version: ${CURVersion}', '']}
+      - See the other stack outputs for Bucket Name, Export Name, and CUR Version details.
