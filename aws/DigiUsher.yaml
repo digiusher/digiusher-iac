@@ -564,6 +564,21 @@ Resources:
                   - config:Describe*
                   - config:GetDiscoveredResourceCounts
                 Resource: "*"
+              - Sid: DigiUsherResourceExplorerPermissions
+                Effect: Allow
+                Action:
+                  - resource-explorer-2:Get*
+                  - resource-explorer-2:List*
+                  - resource-explorer-2:BatchGetView
+                  - resource-explorer-2:Search
+                Resource: "*"
+              - Sid: DigiUsherRAMPermissions
+                Effect: Allow
+                Action:
+                  - ram:GetResourceShares
+                  - ram:ListResources
+                  - ram:ListPrincipals
+                Resource: "*"
               - Sid: DigiUsherOrganizationsAndTaggingPermissions
                 Effect: Allow
                 Action:
