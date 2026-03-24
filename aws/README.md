@@ -1,5 +1,7 @@
 # DigiUsher CloudFormation Template
 
+[![Launch Stack](https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=DigiUsher&templateURL=https://digiusher-cf-templates.s3.amazonaws.com/templates/DigiUsher.yaml)
+
 ## Overview
 
 The **DigiUsher.yaml** template provides a single, comprehensive CloudFormation solution for all DigiUsher AWS integration scenarios. This replaces the previous multiple separate templates with one flexible, parameter-driven template.
