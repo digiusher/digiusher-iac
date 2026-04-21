@@ -64,9 +64,10 @@ output "next_steps" {
     2. Click "Create new role"
     3. Name: "DigiUsher Read-Only"
     4. Scroll through privilege categories and enable:
-       - Admin API > Users > Read
        - Reports
        - License Management
+       - License Management > License Read
+       - Users > Read
     5. Click "Create"
 
     STEP 4: Assign the role to a delegated admin user

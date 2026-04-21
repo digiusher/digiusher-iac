@@ -101,9 +101,10 @@ Keep this file secure. You will provide it to DigiUsher in the final step.
 2. Click **Create new role**
 3. Name: **DigiUsher Read-Only**
 4. Scroll through the privilege categories and enable:
-   - **Admin API** > **Users** > **Read**
    - **Reports**
    - **License Management**
+   - **License Management** > **License Read**
+   - **Users** > **Read**
 5. Click **Create**
 
 ## Post-Deployment Step 4: Assign the Role to a Delegated Admin User
@@ -151,9 +152,10 @@ In the DigiUsher platform, add a new Google Workspace data source and provide:
 
 | Privilege | Purpose |
 |-----------|---------|
-| Admin API > Users > Read | List users with metadata (last login, suspended status, OU) |
 | Reports | Access usage and activity reports |
-| License Management | View license assignments per user and per SKU |
+| License Management | Top-level license management access |
+| License Management > License Read | View license assignments per user and per SKU |
+| Users > Read | List users with metadata (last login, suspended status, OU) |
 
 ---
 
