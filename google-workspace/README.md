@@ -146,7 +146,7 @@ In the DigiUsher platform, add a new Google Workspace data source and provide:
 | `admin.reports.audit.readonly` | Read activity audit logs: Gemini AI usage events |
 | `apps.licensing` | Read license assignments: which users hold which SKUs, seat counts |
 
-> **Note on `apps.licensing`:** This scope grants both read and write access at the API level — no read-only variant exists. DigiUsher only performs read operations. The custom admin role provides an additional layer of access control.
+> **Note on `apps.licensing`:** Although no read-only variant of this scope exists, the custom admin role only grants "License Read", ensuring that only read operations are permitted.
 
 ### Custom Admin Role Privileges
 
