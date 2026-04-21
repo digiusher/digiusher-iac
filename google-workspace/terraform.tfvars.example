@@ -1,0 +1,19 @@
+###############################################################################
+# Google Workspace Integration for DigiUsher
+#
+# Prerequisites:
+#   - A GCP project (any project in your organization)
+#   - Project Owner or Editor access on that project
+#   - Google Workspace Super Admin access (for post-Terraform steps)
+#   - Terraform >= 1.3 installed
+#   - Authenticated: gcloud auth application-default login
+#
+# After terraform apply, follow the instructions in the output to:
+#   1. Configure Domain-Wide Delegation
+#   2. Create a custom admin role
+#   3. Assign the role to a delegated admin
+###############################################################################
+
+# Required — replace with your GCP project ID
+# Find yours with: gcloud projects list
+project_id = "my-gcp-project"
