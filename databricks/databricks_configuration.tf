@@ -33,7 +33,7 @@ variable "databricks_token" {
 variable "service_principal_name" {
   description = "Display name for the billing reader service principal"
   type        = string
-  default     = "billing-focus-reader"
+  default     = "digisuher-focus-reader"
 }
 
 # ── Provider ──────────────────────────────────────────────────────────────────

@@ -11,10 +11,10 @@ Usage:
   export DATABRICKS_HTTP_PATH="/sql/1.0/warehouses/your-warehouse-id"
   export DATABRICKS_CLIENT_ID="your-sp-client-id"
   export DATABRICKS_CLIENT_SECRET="your-sp-client-secret"
-  python3 verify_databricks.py
+  python3 verify_exports.py
 
   # Or pass credentials directly
-  python3 verify_databricks.py \
+  python3 verify_exports.py \
     --host your-workspace.cloud.databricks.com \
     --http-path /sql/1.0/warehouses/your-warehouse-id \
     --client-id your-sp-client-id \
@@ -42,10 +42,20 @@ if missing:
     sys.exit(1)
 
 
-def ok(msg):    print(f"   ✅  {msg}")
-def fail(msg):  print(f"   ❌  {msg}")
-def info(msg):  print(f"   ℹ️   {msg}")
-def section(title): print(f"\n{'─' * 55}\n  {title}\n{'─' * 55}")
+def ok(msg):
+    print(f"   ✅  {msg}")
+
+
+def fail(msg):
+    print(f"   ❌  {msg}")
+
+
+def info(msg):
+    print(f"   ℹ️   {msg}")
+
+
+def section(title):
+    print(f"\n{'─' * 55}\n  {title}\n{'─' * 55}")
 
 
 def credential_provider(host, client_id, client_secret):
@@ -74,7 +84,9 @@ def check_auth(host, http_path, client_id, client_secret):
         conn = dbsql.connect(
             server_hostname=host,
             http_path=http_path,
-            credentials_provider=lambda: credential_provider(host, client_id, client_secret),
+            credentials_provider=lambda: credential_provider(
+                host, client_id, client_secret
+            ),
         )
         ok("Connected to warehouse with service principal OAuth")
         return conn
@@ -88,25 +100,35 @@ def check_system_catalog(conn):
     with conn.cursor() as cur:
         cur.execute("SHOW SCHEMAS IN system")
         schemas = [row[0] for row in cur.fetchall()]
-    accessible = [s for s in ["billing", "compute", "access", "lakeflow"] if s in schemas]
-    missing_s  = [s for s in ["billing", "compute", "access", "lakeflow"] if s not in schemas]
-    for s in accessible: ok(f"system.{s} visible")
-    for s in missing_s:  fail(f"system.{s} not visible — check Unity Catalog grants")
+    accessible = [
+        s for s in ["billing", "compute", "access", "lakeflow"] if s in schemas
+    ]
+    missing_s = [
+        s for s in ["billing", "compute", "access", "lakeflow"] if s not in schemas
+    ]
+    for s in accessible:
+        ok(f"system.{s} visible")
+    for s in missing_s:
+        fail(f"system.{s} not visible — check Unity Catalog grants")
     return len(missing_s) == 0
 
 
 def check_billing_tables(conn):
     section("3 / 4  —  Billing tables")
     tables = {
-        "system.billing.usage":       "SELECT COUNT(*) FROM system.billing.usage",
+        "system.billing.usage": "SELECT COUNT(*) FROM system.billing.usage",
         "system.billing.list_prices": "SELECT COUNT(*) FROM system.billing.list_prices",
     }
     all_ok = True
     for table, query in tables.items():
-        with conn.cursor() as cur:
-            cur.execute(query)
-            count = cur.fetchone()[0]
-        ok(f"{table}  ({count:,} rows)")
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                count = cur.fetchone()[0]
+            ok(f"{table}  ({count:,} rows)")
+        except Exception as e:
+            fail(f"{table} — {e}")
+            all_ok = False
     return all_ok
 
 
@@ -131,11 +153,11 @@ def check_data_freshness(conn):
         return False
 
     print(f"\n   {'Month':<12}  {'Records':>10}  {'Units':>14}")
-    print(f"   {'─'*12}  {'─'*10}  {'─'*14}")
+    print(f"   {'─' * 12}  {'─' * 10}  {'─' * 14}")
     for row in rows:
-        month  = str(row[0])[:7]
-        recs   = f"{row[1]:,}"
-        units  = f"{float(row[2]):,.1f}" if row[2] else "—"
+        month = str(row[0])[:7]
+        recs = f"{row[1]:,}"
+        units = f"{float(row[2]):,.1f}" if row[2] else "—"
         print(f"   {month:<12}  {recs:>10}  {units:>14}")
 
     latest = str(rows[0][0])[:7]
@@ -155,20 +177,26 @@ def main():
 Credentials can be passed as flags or set as environment variables:
   DATABRICKS_HOST, DATABRICKS_HTTP_PATH,
   DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET
-        """
+        """,
     )
-    parser.add_argument("--host",          default=os.environ.get("DATABRICKS_HOST"))
-    parser.add_argument("--http-path",     default=os.environ.get("DATABRICKS_HTTP_PATH"))
-    parser.add_argument("--client-id",     default=os.environ.get("DATABRICKS_CLIENT_ID"))
-    parser.add_argument("--client-secret", default=os.environ.get("DATABRICKS_CLIENT_SECRET"))
+    parser.add_argument("--host", default=os.environ.get("DATABRICKS_HOST"))
+    parser.add_argument("--http-path", default=os.environ.get("DATABRICKS_HTTP_PATH"))
+    parser.add_argument("--client-id", default=os.environ.get("DATABRICKS_CLIENT_ID"))
+    parser.add_argument(
+        "--client-secret", default=os.environ.get("DATABRICKS_CLIENT_SECRET")
+    )
     args = parser.parse_args()
 
-    missing_args = [k for k, v in {
-        "--host":          args.host,
-        "--http-path":     args.http_path,
-        "--client-id":     args.client_id,
-        "--client-secret": args.client_secret,
-    }.items() if not v]
+    missing_args = [
+        k
+        for k, v in {
+            "--host": args.host,
+            "--http-path": args.http_path,
+            "--client-id": args.client_id,
+            "--client-secret": args.client_secret,
+        }.items()
+        if not v
+    ]
 
     if missing_args:
         print(f"\n❌ Missing credentials: {', '.join(missing_args)}")
@@ -183,7 +211,7 @@ Credentials can be passed as flags or set as environment variables:
     print(f"  Client ID:  {args.client_id}")
 
     passed = 0
-    total  = 4
+    total = 4
 
     conn = check_auth(args.host, args.http_path, args.client_id, args.client_secret)
     if conn is None:
@@ -194,9 +222,12 @@ Credentials can be passed as flags or set as environment variables:
     passed += 1
 
     try:
-        if check_system_catalog(conn):  passed += 1
-        if check_billing_tables(conn):  passed += 1
-        if check_data_freshness(conn):  passed += 1
+        if run_check("System catalog access", lambda: check_system_catalog(conn)):
+            passed += 1
+        if run_check("Billing tables", lambda: check_billing_tables(conn)):
+            passed += 1
+        if run_check("Data availability", lambda: check_data_freshness(conn)):
+            passed += 1
     finally:
         conn.close()
 
