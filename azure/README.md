@@ -76,11 +76,26 @@ This will skip the Reservations Reader and Savings Plan Reader role assignments.
 
 ## Identify Your Scenario
 
-Run this to determine configuration:
+List your billing accounts and their agreement type:
 
 ```bash
-python3 check_billing_type.py
+az billing account list --query "[].{Name:displayName, ID:name, Type:agreementType}" -o table
 ```
+
+Map the `agreementType` to a scenario:
+
+- `EnterpriseAgreement` → EA (Scenario 1 or 2)
+- `MicrosoftCustomerAgreement` → MCA (Scenario 3)
+- `MicrosoftOnlineServicesProgram` → Pay-as-you-go / MOSP (Scenario 4, not supported)
+- Empty output → likely pay-as-you-go, or you're missing the Billing Reader role
+
+For EA, check whether a dedicated enrollment account exists to distinguish Scenario 1 from 2:
+
+```bash
+az billing account enrollment-account list --account-name "<BILLING_ACCOUNT_ID>"
+```
+
+If a dedicated enrollment account exists, use Scenario 2; otherwise use Scenario 1.
 
 You'll have one of these scenarios:
 
@@ -297,7 +312,7 @@ This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`
 ## Common Questions
 
 **How do I know which scenario applies?**
-- Run `check_billing_type.py`
+- Run `az billing account list` — see [Identify Your Scenario](#identify-your-scenario)
 - Or ask: "Do you have Enterprise Agreement?" and "Is there a dedicated enrollment account?"
 - Ask us at support@digiusher.com
 
@@ -336,7 +351,6 @@ This includes: `tenant_id`, `application_id`, `client_secret`, `subscription_id`
 
 - `azure_configuration.tf` - Main Terraform configuration
 - `terraform.tfvars` - Your configuration (create from scenario examples)
-- `check_billing_type.py` - Automatic billing type detection
 - `backfill_historical_data.py` - Trigger exports for historical months
 - `verify_exports.py` - Check export status and list available months
 
