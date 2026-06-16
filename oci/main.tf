@@ -25,6 +25,31 @@ resource "oci_identity_user_group_membership" "digiusher" {
 }
 
 # -----------------------------------------------------------------------------
+# API Signing Key
+#
+# OCI authenticates API requests with an RSA key pair. We generate the key pair
+# and register the public half with the service user, so no manual key creation
+# in the Console is needed. The private key is exposed as a sensitive Terraform
+# output (see outputs.tf) for you to hand to DigiUsher.
+#
+# Note: the private key is stored in Terraform/ORM state. Protect state access.
+# To rotate, taint tls_private_key.digiusher and re-apply.
+# -----------------------------------------------------------------------------
+
+resource "tls_private_key" "digiusher" {
+  algorithm = "RSA"
+  # 2048 is OCI's documented standard for API signing keys (its Console and CLI
+  # generate 2048; larger sizes aren't documented as supported). Sufficient for a
+  # read-only, rotatable credential.
+  rsa_bits = 2048
+}
+
+resource "oci_identity_api_key" "digiusher" {
+  user_id   = oci_identity_user.digiusher.id
+  key_value = tls_private_key.digiusher.public_key_pem
+}
+
+# -----------------------------------------------------------------------------
 # Policy: Cost Report Cross-Tenancy Access
 #
 # OCI stores cost reports in an Oracle-owned Object Storage bucket.

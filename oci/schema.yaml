@@ -1,5 +1,5 @@
 title: "DigiUsher OCI Onboarding"
-description: "Sets up read-only access for the DigiUsher FinOps platform to analyze your OCI cost data, resource inventory, and metrics."
+description: "Sets up read-only access for the DigiUsher FinOps platform to analyze your OCI cost data, resource inventory, and metrics. The API signing key is generated automatically - no manual Console steps needed."
 schemaVersion: 1.1.0
 version: "1.0"
 locale: "en"
@@ -71,4 +71,5 @@ outputGroups:
   - title: "DigiUsher Onboarding"
     outputs:
       - digiusher_onboarding
+      - digiusher_private_key
       - next_steps

@@ -18,12 +18,15 @@ Our solution creates an OCI IAM user with policies that provide:
    - Cost and usage report access (cross-tenancy endorse to Oracle's billing bucket)
    - Resource discovery (read all resources in tenancy)
    - Metrics access (read monitoring data in tenancy)
+4. **API signing key**: an RSA key pair generated for the service user, with the public half
+   registered as an API key. The private key is exposed as a Terraform output.
 
 ### Benefits
 
 - **Native FOCUS format** - OCI generates FOCUS cost reports automatically, no export configuration needed
 - **No storage setup required** - cost reports are stored in Oracle's bucket, not yours
 - **Read-only by default** - all policies grant read/inspect access only
+- **No manual key step** - the API signing key is generated as part of the deployment
 - **One-click deploy** via OCI Resource Manager
 
 ## Prerequisites
@@ -44,63 +47,45 @@ Our solution creates an OCI IAM user with policies that provide:
 3. Review the pre-filled configuration and adjust if needed
 4. Click **Create** to deploy the stack
 5. Wait for the stack to complete (~2 minutes)
-6. Continue to [Post-Deployment: Generate API Key](#post-deployment-generate-api-key)
+6. Open the stack's **Application information** / **Outputs** tab and copy the values from
+   `digiusher_onboarding` and `digiusher_private_key` (click to reveal the masked private key)
+7. Continue to [Provide Credentials to DigiUsher](#provide-credentials-to-digiusher)
 
-### Option B: Local Terraform
+### Option B: Scripted Deploy via ORM (`onboard.sh`)
+
+Prefer the command line? With the [OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm)
+configured (plus `jq` and `zip`), `onboard.sh` runs the same Resource Manager deployment from
+your terminal — no Terraform install needed, and state stays managed by Oracle.
 
 ```bash
 cd oci/
-
-# Initialize Terraform
-terraform init
-
-# Review what will be created
-terraform plan \
-  -var="tenancy_ocid=ocid1.tenancy.oc1..your-tenancy-ocid" \
-  -var="region=us-ashburn-1" \
-  -var="user_email=digiusher-svc@yourcompany.com"
-
-# Deploy
-terraform apply \
-  -var="tenancy_ocid=ocid1.tenancy.oc1..your-tenancy-ocid" \
-  -var="region=us-ashburn-1" \
-  -var="user_email=digiusher-svc@yourcompany.com"
+./onboard.sh
 ```
 
-> **Note**: When running Terraform locally, you must be authenticated to OCI. See [OCI Terraform Provider Authentication](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/terraformproviderconfiguration.htm) for options.
+The script prompts for your tenancy OCID, region, and service-user email (auto-filling the
+first two from `~/.oci/config`), runs the ORM apply job, then prints the five credential values
+and writes the private key to `digiusher-oci-private-key.pem`.
 
----
+Using a named CLI profile? Pass `--profile <name>` (or set `OCI_CLI_PROFILE`). To tear down:
+`./onboard.sh --destroy`.
 
-## Post-Deployment: Generate API Key
-
-After deploying the stack, you need to generate an API key for the service user. This step cannot be automated and must be done manually in the OCI Console.
-
-### Steps
-
-1. Go to **OCI Console** > **Identity & Security** > **Users**
-2. Click on **digiusher-service-user** (or the name you configured)
-3. Under **Resources** (left sidebar), click **API Keys**
-4. Click **Add API Key**
-5. Select **Generate API Key Pair**
-6. Click **Download Private Key** and save the `.pem` file securely
-7. Click **Add**
-8. Note the **Fingerprint** displayed (e.g. `ab:cd:ef:12:34:...`)
-
-> **Important**: The private key is only shown once. Store it securely - you will need to provide it to DigiUsher.
+> Both options deploy through OCI Resource Manager, so Terraform state — including the
+> generated private key — is stored in Oracle's managed backend, never on your machine.
 
 ---
 
 ## Provide Credentials to DigiUsher
 
-After generating the API key, provide these 5 values in the DigiUsher UI:
+The API signing key is created automatically by the deployment — there are no manual Console
+steps. Provide these 5 values in the DigiUsher UI:
 
 | Value | Where to Find |
 |-------|---------------|
-| **Tenancy OCID** | Terraform output or OCI Console > Administration > Tenancy Details |
-| **User OCID** | Terraform output or OCI Console > Identity > Users > digiusher-service-user |
-| **Region** | Your tenancy's home region (e.g. `us-ashburn-1`) |
-| **API Key Fingerprint** | Displayed after adding the API key (step 8 above) |
-| **Private Key (PEM)** | Contents of the downloaded `.pem` file |
+| **Tenancy OCID** | `digiusher_onboarding.tenancy_ocid` output |
+| **User OCID** | `digiusher_onboarding.user_ocid` output |
+| **Region** | `digiusher_onboarding.region` output |
+| **API Key Fingerprint** | `digiusher_onboarding.key_fingerprint` output |
+| **Private Key (PEM)** | `digiusher_private_key` output — the ORM stack **Outputs** tab, or the file written by `onboard.sh` |
 
 ---
 
@@ -175,16 +160,25 @@ To remove all DigiUsher resources from your tenancy:
 3. Click **Destroy** to remove all resources
 4. Optionally click **Delete Stack** to remove the stack definition
 
-### If deployed via local Terraform
+### If deployed via `onboard.sh`
 
 ```bash
-terraform destroy \
-  -var="tenancy_ocid=ocid1.tenancy.oc1..your-tenancy-ocid" \
-  -var="region=us-ashburn-1" \
-  -var="user_email=digiusher-svc@yourcompany.com"
+./onboard.sh --destroy
 ```
 
-> **Note**: You should also delete the API key from the user before destroying, or the destroy will handle it as part of user deletion.
+Destroying removes the user, group, policies, and the API key together.
+
+---
+
+## Key Management
+
+The API signing key pair is generated as part of the deployment, so the private key is stored
+in the Resource Manager stack's Terraform state — in Oracle's managed backend, not on your
+machine. Restrict who can access the stack and its state.
+
+To rotate the key, run `./onboard.sh --destroy` followed by `./onboard.sh` (or destroy and
+recreate the stack in the Console). This issues a fresh key pair; supply the new private key
+and fingerprint to DigiUsher.
 
 ---
 
@@ -200,9 +194,8 @@ The cross-tenancy `endorse` statement for cost reports uses a fixed Oracle tenan
 
 ### "User already exists"
 
-If a user named `digiusher-service-user` already exists, either:
-- Import it into Terraform state: `terraform import oci_identity_user.digiusher <user-ocid>`
-- Or change the `user_name` variable to a different name
+If a user named `digiusher-service-user` already exists, set the **Service User Name** variable
+(`user_name`) to a different value when deploying the stack.
 
 ### DigiUsher reports "Unable to access cost reports"
 
