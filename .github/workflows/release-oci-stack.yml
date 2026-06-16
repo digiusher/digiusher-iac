@@ -1,0 +1,63 @@
+name: Release OCI stack
+
+# Publishes oci-stack.zip as a release asset so the "Deploy to Oracle Cloud"
+# one-click button (oci/README.md) can fetch it from releases/latest/download.
+#
+# main is always releasable (everything lands via reviewed PRs), so the asset
+# tracks main: every push that touches oci/ rebuilds the zip and re-publishes it
+# to a single rolling release (tag: oci-stack) kept flagged as "latest".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "oci/**"
+      - ".github/workflows/release-oci-stack.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: oci-stack
+
+jobs:
+  release-oci-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Guard: never publish a stack that doesn't validate.
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+      - name: Validate Terraform
+        working-directory: oci
+        run: |
+          terraform fmt -check
+          terraform init -backend=false -input=false
+          terraform validate
+
+      # ORM expects the .tf files and schema.yaml at the ROOT of the zip, so we
+      # zip from inside oci/. The checkout only contains committed files, so the
+      # only thing to drop is onboard.sh -- the CLI helper isn't part of the stack.
+      - name: Build oci-stack.zip
+        working-directory: oci
+        run: |
+          zip -r "$GITHUB_WORKSPACE/oci-stack.zip" . -x 'onboard.sh'
+          unzip -l "$GITHUB_WORKSPACE/oci-stack.zip"
+
+      - name: Publish rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "DigiUsher OCI Resource Manager stack" \
+              --notes "Auto-published from main. Used by the one-click Deploy button." \
+              --latest
+          fi
+          gh release upload "$RELEASE_TAG" "$GITHUB_WORKSPACE/oci-stack.zip" --clobber
+          # Keep this release flagged latest and record the source commit.
+          gh release edit "$RELEASE_TAG" --latest \
+            --notes "Auto-published from main @ ${GITHUB_SHA}. Used by the one-click Deploy button."
