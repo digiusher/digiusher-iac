@@ -94,6 +94,12 @@ resource "databricks_grant" "billing_list_prices" {
   privileges = ["SELECT"]
 }
 
+resource "databricks_grant" "billing_account_prices" {
+  table      = "system.billing.account_prices"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
 resource "databricks_grant" "access_schema" {
   schema     = "system.access"
   principal  = local.sp_id
@@ -132,6 +138,78 @@ resource "databricks_grant" "lakeflow_schema" {
 
 resource "databricks_grant" "lakeflow_pipelines" {
   table      = "system.lakeflow.pipelines"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "lakeflow_jobs" {
+  table      = "system.lakeflow.jobs"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "query_schema" {
+  schema     = "system.query"
+  principal  = local.sp_id
+  privileges = ["USE_SCHEMA"]
+}
+
+resource "databricks_grant" "query_history" {
+  table      = "system.query.history"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "compute_node_timeline" {
+  table      = "system.compute.node_timeline"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "compute_instance_pools" {
+  table      = "system.compute.instance_pools"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "compute_warehouse_events" {
+  table      = "system.compute.warehouse_events"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "serving_schema" {
+  schema     = "system.serving"
+  principal  = local.sp_id
+  privileges = ["USE_SCHEMA"]
+}
+
+resource "databricks_grant" "serving_served_entities" {
+  table      = "system.serving.served_entities"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "serving_endpoint_usage" {
+  table      = "system.serving.endpoint_usage"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "lakeflow_job_run_timeline" {
+  table      = "system.lakeflow.job_run_timeline"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "lakeflow_job_task_run_timeline" {
+  table      = "system.lakeflow.job_task_run_timeline"
+  principal  = local.sp_id
+  privileges = ["SELECT"]
+}
+
+resource "databricks_grant" "lakeflow_job_tasks" {
+  table      = "system.lakeflow.job_tasks"
   principal  = local.sp_id
   privileges = ["SELECT"]
 }
