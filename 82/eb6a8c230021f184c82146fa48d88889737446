@@ -1,0 +1,21 @@
+gcp/organization_iam.tf
+  s_88aa0a63f044d5::t_0d5c9ebbcee2ef 19-25
+gcp/README.md
+  s_88aa0a63f044d5::t_4abe76d3abdc79 222
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "82eb6a8c230021f184c82146fa48d88889737446",
+  "prompts": {},
+  "sessions": {
+    "s_88aa0a63f044d5": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "67f39580-9d8d-4605-8465-d802b625035b",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "pranshu raj <pranshuraj65536@gmail.com>"
+    }
+  }
+}
