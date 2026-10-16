@@ -474,12 +474,12 @@ resource "azapi_resource" "focus_export" {
     }
   }
 
+  # The billing-scope roles above are only for triggering backfill runs. They
+  # are not dependencies, so that a failed role assignment does not block exports.
   depends_on = [
     azurerm_resource_provider_registration.cost_management_exports,
     azurerm_storage_container.export_container,
-    azurerm_role_assignment.storage_blob_reader,
-    azapi_resource.cost_management_contributor_assignment,
-    azapi_resource_action.mca_billing_contributor
+    azurerm_role_assignment.storage_blob_reader
   ]
 
   lifecycle {
