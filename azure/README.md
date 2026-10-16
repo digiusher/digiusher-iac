@@ -90,6 +90,7 @@ You'll have one of these scenarios:
 | **2** | EA - has enrollment account | `enrollment_account` |
 | **3** | MCA | `invoice_section` |
 | **4** | MOSP/Pay-as-you-go only | Not supported |
+| **5** | CSP customer, no access to the partner billing account | `subscription` |
 
 ---
 
@@ -204,6 +205,33 @@ az billing invoice section list --account-name "BILLING_ACCOUNT_ID" --profile-na
 1. Upgrade to EA or MCA
 2. Use alternative integration (ActualCost + AmortizedCost exports)
 
+### Scenario 5: CSP Customer (Per-Subscription Exports)
+
+**When to use:** Your subscriptions are billed through a Microsoft CSP partner, and the partner cannot make an export at customer scope. FOCUS exports do not work at management group scope, so Terraform makes one export per subscription.
+
+```hcl
+# Subscription and tenant
+subscription_id = "SUBSCRIPTION_FOR_STORAGE"
+tenant_id       = "YOUR_TENANT_ID"
+
+billing_scope_level     = "subscription"
+target_subscription_ids = ["SUB_ID_1", "SUB_ID_2"]  # leave empty for all subscriptions in the tenant
+
+# Requires tenant-level access, which most CSP users do not have
+enable_reservations_access = false
+```
+
+**Requirements:**
+- Your CSP partner must set the cost visibility policy to **Yes** for your tenant (Partner Center: Customers > Policies).
+- The user who runs Terraform must have Owner on each target subscription.
+
+**Notes:**
+- Costs are at pay-as-you-go retail prices, not the partner price.
+- Each export writes to `<export_root_path>/<subscription-id>/`.
+- If you add a subscription, add it to `target_subscription_ids` and run `terraform apply` again.
+
+See `terraform.tfvars.scenario5-csp-subscription`.
+
 ---
 
 ## Deployment Steps
@@ -253,6 +281,14 @@ python3 backfill_historical_data.py --from-terraform --month 2024-06
 ```
 
 **Note:** Azure only allows one export at a time. The script checks for in-progress exports and warns you to wait.
+
+For Scenario 5, there is one export per subscription. Run the backfill for each scope:
+
+```bash
+for s in $(terraform output -json export_scopes | jq -r '.[]'); do
+  python3 backfill_historical_data.py --from-terraform --billing-scope "$s" --month 2024-06
+done
+```
 
 For multiple months:
 ```bash

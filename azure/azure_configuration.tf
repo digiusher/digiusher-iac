@@ -64,7 +64,7 @@ variable "enable_cost_exports" {
 
 variable "billing_scope_level" {
   type        = string
-  description = "Billing scope level: billing_account (EA/MCA top-level), enrollment_account (EA sub-scope), invoice_section (MCA sub-scope), customer (MPA/CSP), or subscription"
+  description = "Billing scope level: billing_account (EA/MCA top-level), enrollment_account (EA sub-scope), invoice_section (MCA sub-scope), customer (MPA/CSP), or subscription (one export per subscription in target_subscription_ids, or all subscriptions in the tenant if empty)"
   default     = "billing_account"
 
   validation {
@@ -178,6 +178,22 @@ locals {
     var.billing_scope_level == "billing_account" ? (local.is_mca ? "MCA-BillingAccount" : "EA-BillingAccount") :
     "Subscription"
   )
+
+  # FOCUS export targets. Subscription scope gets one export per subscription,
+  # written to <root>/<sub-id> (FOCUS exports are not supported at management
+  # group scope). Every other level gets a single export at the billing scope.
+  export_name = "digiusher-focus-export"
+  export_targets = var.billing_scope_level == "subscription" ? {
+    for sub_id in local.subscriptions : sub_id => {
+      scope       = "/subscriptions/${sub_id}"
+      root_folder = "${var.export_root_path}/${sub_id}"
+    }
+    } : {
+    primary = {
+      scope       = local.billing_scope
+      root_folder = var.export_root_path
+    }
+  }
 }
 
 # ============================================================================
@@ -369,10 +385,10 @@ resource "azurerm_storage_container" "export_container" {
 
 # Cost Management Contributor at billing scope (for EA - required to trigger exports)
 resource "azapi_resource" "cost_management_contributor_assignment" {
-  count     = var.enable_cost_exports && !local.is_mca ? 1 : 0
-  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-mgmt-contributor-${md5(local.billing_scope)}")
+  for_each  = var.enable_cost_exports && !local.is_mca ? local.export_targets : {}
+  name      = uuidv5("dns", "${azuread_service_principal.digiusher_app_sp.object_id}-cost-mgmt-contributor-${md5(each.value.scope)}")
   type      = "Microsoft.Authorization/roleAssignments@2022-04-01"
-  parent_id = local.billing_scope
+  parent_id = each.value.scope
 
   body = {
     properties = {
@@ -413,10 +429,10 @@ resource "azurerm_role_assignment" "storage_blob_reader" {
 
 # Create FOCUS export
 resource "azapi_resource" "focus_export" {
-  count     = var.enable_cost_exports ? 1 : 0
-  name      = "digiusher-focus-export"
+  for_each  = var.enable_cost_exports ? local.export_targets : {}
+  name      = local.export_name
   type      = "Microsoft.CostManagement/exports@2025-03-01"
-  parent_id = local.billing_scope
+  parent_id = each.value.scope
 
   body = {
     identity = {
@@ -438,7 +454,7 @@ resource "azapi_resource" "focus_export" {
           type           = "AzureBlob"
           resourceId     = azurerm_storage_account.export_storage[0].id
           container      = var.storage_container_name
-          rootFolderPath = var.export_root_path
+          rootFolderPath = each.value.root_folder
         }
       }
       definition = {
@@ -473,13 +489,30 @@ resource "azapi_resource" "focus_export" {
   }
 }
 
+# Billing-scope exports moved from count to for_each. Without this, Terraform
+# deletes and recreates the export with the same name at the same scope.
+moved {
+  from = azapi_resource.focus_export[0]
+  to   = azapi_resource.focus_export["primary"]
+}
+
+moved {
+  from = azapi_resource.cost_management_contributor_assignment[0]
+  to   = azapi_resource.cost_management_contributor_assignment["primary"]
+}
+
 # ============================================================================
 # OUTPUTS
 # ============================================================================
 
 output "export_name" {
-  description = "Name of the FOCUS export"
-  value       = var.enable_cost_exports ? azapi_resource.focus_export[0].name : null
+  description = "Name of the FOCUS export (the same name at every scope)"
+  value       = var.enable_cost_exports ? local.export_name : null
+}
+
+output "export_scopes" {
+  description = "Scopes that have a FOCUS export (one per subscription at subscription scope)"
+  value       = var.enable_cost_exports ? [for t in values(local.export_targets) : t.scope] : null
 }
 
 output "billing_scope" {
@@ -494,7 +527,11 @@ output "billing_scope_type" {
 
 output "backfill_command" {
   description = "Command to run historical data backfill (run once per month)"
-  value       = var.enable_cost_exports ? "python3 backfill_historical_data.py --from-terraform --month YYYY-MM" : null
+  value = !var.enable_cost_exports ? null : (
+    var.billing_scope_level == "subscription" ?
+    "for s in $(terraform output -json export_scopes | jq -r '.[]'); do python3 backfill_historical_data.py --from-terraform --billing-scope $s --month YYYY-MM; done" :
+    "python3 backfill_historical_data.py --from-terraform --month YYYY-MM"
+  )
 }
 
 output "digiusher_onboarding" {
