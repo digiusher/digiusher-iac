@@ -155,8 +155,9 @@ locals {
   # Storage account naming
   storage_account_name = var.storage_account_name != "" ? var.storage_account_name : "digiusher${substr(md5(var.tenant_id), 0, 10)}"
 
-  # Detect billing account type: MCA billing account IDs contain colons
-  is_mca = var.billing_account_id != "" && can(regex(":", var.billing_account_id))
+  # Detect billing account type: MCA billing account IDs contain colons.
+  # Subscription scope uses Azure RBAC, so it never uses MCA billing roles.
+  is_mca = var.billing_scope_level != "subscription" && var.billing_account_id != "" && can(regex(":", var.billing_account_id))
 
   # Billing scope determination
   billing_scope = (
@@ -351,10 +352,25 @@ resource "azapi_resource" "digiusher_savings_plan_reader" {
 # FOCUS EXPORT RESOURCES
 # ============================================================================
 
-# Register the CostManagementExports provider (required for exports)
-resource "azurerm_resource_provider_registration" "cost_management_exports" {
-  count = var.enable_cost_exports ? 1 : 0
-  name  = "Microsoft.CostManagementExports"
+# Register the CostManagementExports provider on the storage subscription
+# (required for exports). The register action is idempotent, so it also works
+# if the provider is already registered.
+resource "azapi_resource_action" "register_cost_management_exports" {
+  count       = var.enable_cost_exports ? 1 : 0
+  type        = "Microsoft.Resources/providers@2021-04-01"
+  resource_id = "/subscriptions/${var.subscription_id}/providers/Microsoft.CostManagementExports"
+  action      = "register"
+  method      = "POST"
+}
+
+# Replaced by the register action above. Forget the old resource without
+# unregistering the provider, which would break existing exports.
+removed {
+  from = azurerm_resource_provider_registration.cost_management_exports
+
+  lifecycle {
+    destroy = false
+  }
 }
 
 resource "azurerm_resource_group" "export_rg" {
@@ -379,7 +395,7 @@ resource "azurerm_storage_account" "export_storage" {
 resource "azurerm_storage_container" "export_container" {
   count                 = var.enable_cost_exports ? 1 : 0
   name                  = var.storage_container_name
-  storage_account_id  = azurerm_storage_account.export_storage[0].id
+  storage_account_id    = azurerm_storage_account.export_storage[0].id
   container_access_type = "private"
 }
 
@@ -392,8 +408,9 @@ resource "azapi_resource" "cost_management_contributor_assignment" {
 
   body = {
     properties = {
-      principalId      = azuread_service_principal.digiusher_app_sp.object_id
-      roleDefinitionId = "/providers/Microsoft.Authorization/roleDefinitions/434105ed-43f6-45c7-a02f-909b2ba83430"
+      principalId = azuread_service_principal.digiusher_app_sp.object_id
+      # Azure returns subscription-scoped role definition IDs; match them to avoid drift
+      roleDefinitionId = "${startswith(each.value.scope, "/subscriptions/") ? each.value.scope : ""}/providers/Microsoft.Authorization/roleDefinitions/434105ed-43f6-45c7-a02f-909b2ba83430"
       principalType    = "ServicePrincipal"
     }
   }
@@ -469,7 +486,7 @@ resource "azapi_resource" "focus_export" {
       }
       partitionData         = true
       dataOverwriteBehavior = "OverwritePreviousReport"
-      compressionMode       = var.export_file_format == "Csv" ? "Gzip" : "Snappy"
+      compressionMode       = var.export_file_format == "Csv" ? "gzip" : "snappy" # Azure returns lowercase
       exportDescription     = "DigiUsher FOCUS cost export"
     }
   }
@@ -477,7 +494,7 @@ resource "azapi_resource" "focus_export" {
   # The billing-scope roles above are only for triggering backfill runs. They
   # are not dependencies, so that a failed role assignment does not block exports.
   depends_on = [
-    azurerm_resource_provider_registration.cost_management_exports,
+    azapi_resource_action.register_cost_management_exports,
     azurerm_storage_container.export_container,
     azurerm_role_assignment.storage_blob_reader
   ]
