@@ -1,0 +1,21 @@
+azure/azure_configuration.tf
+  s_012a9c3fa8ff77::t_962da2333bc54a 398,411-413,489
+  s_012a9c3fa8ff77::t_1ad766e7e990cd 355-373,497
+  s_012a9c3fa8ff77::t_050b9ea725e966 158-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6f18e939a7c40bb57562d9172eec27c1e7674d01",
+  "prompts": {},
+  "sessions": {
+    "s_012a9c3fa8ff77": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8f905b00-0451-4d49-890c-65adf9feab7f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Gaganpreet Arora <me@gaganpreet.in>"
+    }
+  }
+}
