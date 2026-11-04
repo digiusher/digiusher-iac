@@ -285,7 +285,8 @@ Examples:
     parser.add_argument("--client-secret", help="Service Principal Client Secret")
     parser.add_argument(
         "--billing-scope",
-        help="Billing scope (e.g., /providers/Microsoft.Billing/billingAccounts/123456)",
+        help="Billing scope (e.g., /providers/Microsoft.Billing/billingAccounts/123456). "
+        "With --from-terraform, overrides the terraform billing_scope output.",
     )
     parser.add_argument("--export-name", help="Name of the export")
     parser.add_argument(
@@ -318,7 +319,8 @@ Examples:
         tenant_id = outputs["tenant_id"]
         client_id = outputs["application_id"]
         client_secret = outputs["client_secret"]
-        billing_scope = outputs["billing_scope"]
+        # --billing-scope selects one export when Terraform created one per subscription
+        billing_scope = args.billing_scope or outputs["billing_scope"]
         export_name = outputs["export_name"]
     else:
         if not all([args.tenant_id, args.client_id, args.billing_scope, args.export_name]):

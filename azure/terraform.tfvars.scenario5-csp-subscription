@@ -1,0 +1,36 @@
+# Scenario 5: CSP Customer (Per-Subscription Exports)
+#
+# Use this when:
+# - Subscriptions are billed through a Microsoft CSP partner
+# - The partner cannot make a FOCUS export at customer scope
+# - The CSP partner set the cost visibility policy to "Yes" for this tenant
+#
+# Terraform makes one FOCUS export per subscription. FOCUS exports do not work
+# at management group scope.
+
+# Subscription and tenant
+# subscription_id holds the storage account
+subscription_id = "REPLACE_WITH_SUBSCRIPTION_ID"
+tenant_id       = "REPLACE_WITH_TENANT_ID"
+
+billing_scope_level = "subscription"
+
+# Subscriptions to onboard. Each one gets Reader and a FOCUS export.
+# Leave empty for all subscriptions in the tenant.
+target_subscription_ids = [
+  "REPLACE_WITH_SUBSCRIPTION_ID_1",
+  "REPLACE_WITH_SUBSCRIPTION_ID_2",
+]
+
+# Storage (leave empty for auto-generated name)
+storage_account_name   = ""
+storage_container_name = "digiusher-focus-exports"
+
+# Enable FOCUS exports
+enable_cost_exports = true
+
+# Requires tenant-level access, which most CSP users do not have
+enable_reservations_access = false
+
+# Optional: VM power scheduler
+enable_power_scheduler = false
