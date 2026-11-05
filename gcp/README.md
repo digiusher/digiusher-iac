@@ -219,6 +219,7 @@ All permissions are **read-only**. DigiUsher cannot create, modify, or delete an
 | `roles/compute.viewer` | View Compute Engine resource details, Committed Use Discounts (CUDs), and reservations. |
 | `roles/cloudsql.viewer` | View Cloud SQL instance details and committed use pricing for optimization recommendations. |
 | `roles/bigquery.resourceViewer` | List BigQuery capacity commitments and reservations for CUD tracking and expiration alerts. |
+| `roles/bigquery.metadataViewer` | Read BigQuery table metadata for storage cost enrichment. |
 | `roles/monitoring.viewer` | Read utilization metrics (CPU, memory, network, disk) from Cloud Monitoring for rightsizing analysis. |
 | `roles/resourcemanager.tagViewer` | Read organization tags and tag bindings for chargeback/showback cost allocation. |
 
